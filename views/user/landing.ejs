@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Presense | Luxury & Middle Eastern Fragrances</title>
+    
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='25' fill='%231A1A1A'/><text x='50%' y='68%' font-family='Georgia, serif' font-size='55' font-weight='bold' fill='%23D4AF37' text-anchor='middle'>P</text></svg>">
+
+    <!-- ✅ CSP-safe: cdnjs Tailwind v2 (replaces blocked cdn.tailwindcss.com) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
+
+    <style>
+        /* ─── Brand Design Tokens ─────────────────────────────── */
+        :root {
+            --cream:    #FDFBF7;
+            --amber:    #D4AF37;
+            --charcoal: #1A1A1A;
+            --earth:    #705335;
+        }
+
+        /* ─── Custom colour utilities (replaces Tailwind config) ─ */
+        .bg-scentCream    { background-color: var(--cream); }
+        .bg-scentAmber    { background-color: var(--amber); }
+        .bg-scentCharcoal { background-color: var(--charcoal); }
+        .bg-scentEarth    { background-color: var(--earth); }
+
+        .text-scentAmber    { color: var(--amber); }
+        .text-scentCharcoal { color: var(--charcoal); }
+        .text-scentEarth    { color: var(--earth); }
+
+        .border-scentAmber    { border-color: var(--amber); }
+        .border-scentCharcoal { border-color: var(--charcoal); }
+
+        .hover\:bg-scentAmber:hover    { background-color: var(--amber); }
+        .hover\:bg-scentCharcoal:hover { background-color: var(--charcoal); }
+        .hover\:bg-scentEarth:hover    { background-color: var(--earth); }
+        .hover\:text-scentAmber:hover  { color: var(--amber); }
+        .hover\:text-scentEarth:hover  { color: var(--earth); }
+        .hover\:border-scentAmber:hover { border-color: var(--amber); }
+
+        /* ─── Keyframe Animations ─────────────────────────────── */
+        @keyframes fadeInUp {
+            0%   { opacity: 0; transform: translateY(25px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+            0%   { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        .animate-fadeInUp {
+            animation: fadeInUp 1s cubic-bezier(0.215, 0.610, 0.355, 1) forwards;
+        }
+        .animate-fadeInUpDelayed {
+            animation: fadeInUp 1.4s cubic-bezier(0.215, 0.610, 0.355, 1) forwards;
+        }
+        .animate-fadeIn {
+            animation: fadeIn 1.5s ease-out forwards;
+        }
+
+        /* ─── Misc helpers ────────────────────────────────────── */
+        .animate-init { opacity: 0; }
+
+        .shuffle-card {
+            transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1),
+                        opacity 0.8s ease,
+                        z-index 0.8s step-end;
+        }
+
+        /* Tailwind v2 doesn't have backdrop-filter utilities — polyfill */
+        .backdrop-blur-md {
+            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(12px);
+        }
+
+        /* mix-blend-color-dodge (not in v2) */
+        .mix-blend-color-dodge { mix-blend-mode: color-dodge; }
+        .mix-blend-luminosity  { mix-blend-mode: luminosity; }
+
+        /* Tailwind v2 lacks some font-serif in JIT — ensure it works */
+        .font-serif { font-family: Georgia, Cambria, "Times New Roman", Times, serif; }
+
+        /* Pointer-events none helper */
+        .pointer-events-none { pointer-events: none; }
+
+        /* active:scale-98 not in v2 */
+        .active\:scale-98:active { transform: scale(0.98); }
+
+        /* group-hover:scale-102 shim */
+        .group:hover .group-hover\:scale-102 { transform: scale(1.02); }
+
+        /* duration helpers not in v2 */
+        .duration-\[4000ms\] { transition-duration: 4000ms; }
+        .duration-\[3000ms\] { transition-duration: 3000ms; }
+
+        /* z helpers */
+        .z-5 { z-index: 5; }
+    </style>
+</head>
+<body class="bg-scentCream text-scentCharcoal font-sans antialiased overflow-x-hidden">
+
+    <!-- Ambient Falling Petal Canvas Layer -->
+    <canvas id="scent-petals" class="fixed inset-0 pointer-events-none z-30"></canvas>
+
+    <!-- Navigation Bar -->
+    <nav class="border-b border-gray-200 bg-white sticky top-0 z-50 px-6 py-4 backdrop-blur-md" style="background-color: rgba(255,255,255,0.85);">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <a href="/" class="text-2xl font-serif tracking-widest uppercase font-bold text-scentCharcoal hover:text-scentEarth transition-colors duration-500">
+                Presense
+            </a>
+            <div class="flex items-center space-x-6">
+                <a href="/products" class="hover:text-scentAmber transition-colors duration-300">Shop All</a>
+                <a href="/login" class="text-sm font-medium hover:text-scentAmber transition-colors duration-300">Log In</a>
+                <a href="/signup" class="bg-scentCharcoal text-white text-sm px-5 py-2 rounded-full hover:bg-scentEarth transform transition duration-300 shadow-sm" style="transition: background-color 0.3s, transform 0.3s;">
+                    Sign Up
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="relative bg-black py-20 px-6 overflow-hidden flex items-center"
+            style="background-image: url('https://images.unsplash.com/photo-1610461888750-10bbf3ba653f?q=80&w=2000&auto=format&fit=crop'); background-size: cover; background-position: center; min-height: 650px;">
+
+        <div class="absolute inset-0 bg-black z-0" style="opacity: 0.75;"></div>
+
+        <div class="absolute z-5 pointer-events-none" style="top:-96px; left:-80px; width:384px; height:384px; background:#d97706; border-radius:9999px; mix-blend-mode:color-dodge; filter:blur(64px); opacity:0.2;"></div>
+        <div class="absolute z-5 pointer-events-none" style="bottom:-96px; right:-80px; width:384px; height:384px; background:#78716c; border-radius:9999px; mix-blend-mode:color-dodge; filter:blur(64px); opacity:0.3;"></div>
+
+        <div class="max-w-7xl mx-auto grid gap-16 items-center relative z-10 w-full text-left" style="grid-template-columns: 1fr 1fr;">
+            
+            <!-- Left: Typography -->
+            <div class="space-y-6 max-w-xl">
+                <span class="animate-init animate-fadeIn text-xs uppercase tracking-widest text-scentAmber font-semibold px-3 py-1 rounded-full inline-block" style="background-color: rgba(26,26,26,0.8);">
+                    Exquisite Olfactory Art
+                </span>
+                <h1 class="animate-init animate-fadeInUp text-6xl font-serif text-white leading-tight tracking-wide">
+                    Find Your Signature Scent
+                </h1>
+                <p class="animate-init animate-fadeInUpDelayed text-gray-300 text-lg font-light leading-relaxed">
+                    Discover curated designer masterpieces and rare, rich Middle Eastern oud profiles selected explicitly for the modern connoisseur.
+                </p>
+                <div class="animate-init animate-fadeInUpDelayed pt-2" style="animation-delay: 0.4s;">
+                    <a href="#categories" class="inline-block bg-white text-scentCharcoal font-semibold px-8 py-3 shadow-md hover:bg-scentAmber transform transition-all duration-300 uppercase text-xs tracking-widest"
+                       style="border-radius: 2px;">
+                        Explore Collections
+                    </a>
+                </div>
+            </div>
+
+            <!-- Right: 5-Card Shuffle Deck -->
+            <div class="flex justify-end animate-init animate-fadeInUp pr-16" style="animation-delay: 0.5s;">
+                <div id="interactive-deck" class="relative cursor-pointer select-none active:scale-98 transition-transform duration-200" style="width:270px; height:360px;">
+
+                    <div class="absolute inset-0 pointer-events-none z-0" style="background: radial-gradient(circle at center, rgba(212,175,55,0.25) 0%, transparent 70%); border-radius:9999px; filter:blur(32px); transform:scale(1.25);"></div>
+
+                    <!-- Card 1 -->
+                    <div class="shuffle-card absolute inset-0 w-full h-full overflow-hidden shadow-2xl bg-gray-900"
+                         style="border-radius:12px; border:1px solid rgba(255,255,255,0.1); transform: translate(0px,0px) scale(1) rotate(0deg); z-index:50; opacity:1;">
+                        <img src="https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=800&auto=format&fit=crop" alt="Bleu Luxury" class="w-full h-full object-cover pointer-events-none">
+                        <div class="absolute inset-0 pointer-events-none" style="background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);"></div>
+                        <span class="absolute bottom-4 left-4 text-gray-300 uppercase" style="font-size:10px; font-family:monospace; letter-spacing:0.15em;">01 / Bleu Luxury</span>
+                    </div>
+
+                    <!-- Card 2 -->
+                    <div class="shuffle-card absolute inset-0 w-full h-full overflow-hidden shadow-2xl bg-gray-900"
+                         style="border-radius:12px; border:1px solid rgba(255,255,255,0.1); transform: translate(16px,-16px) scale(0.96) rotate(2deg); z-index:40; opacity:0.90;">
+                        <img src="https://images.unsplash.com/photo-1541643600914-78b084683601?q=80&w=800&auto=format&fit=crop" alt="Amber Oud" class="w-full h-full object-cover pointer-events-none">
+                        <div class="absolute inset-0 pointer-events-none" style="background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);"></div>
+                        <span class="absolute bottom-4 left-4 text-gray-300 uppercase" style="font-size:10px; font-family:monospace; letter-spacing:0.15em;">02 / Amber Oud</span>
+                    </div>
+
+                    <!-- Card 3 -->
+                    <div class="shuffle-card absolute inset-0 w-full h-full overflow-hidden shadow-2xl bg-gray-900"
+                         style="border-radius:12px; border:1px solid rgba(255,255,255,0.1); transform: translate(32px,-32px) scale(0.92) rotate(4deg); z-index:30; opacity:0.75;">
+                        <img src="https://images.unsplash.com/photo-1523293182086-7651a899d37f?q=80&w=800&auto=format&fit=crop" alt="Intense Scent" class="w-full h-full object-cover pointer-events-none">
+                        <div class="absolute inset-0 pointer-events-none" style="background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);"></div>
+                        <span class="absolute bottom-4 left-4 text-gray-300 uppercase" style="font-size:10px; font-family:monospace; letter-spacing:0.15em;">03 / Intense Scent</span>
+                    </div>
+
+                    <!-- Card 4 -->
+                    <div class="shuffle-card absolute inset-0 w-full h-full overflow-hidden shadow-2xl bg-gray-900"
+                         style="border-radius:12px; border:1px solid rgba(255,255,255,0.1); transform: translate(-16px,16px) scale(0.88) rotate(-2deg); z-index:20; opacity:0.55;">
+                        <img src="https://images.unsplash.com/photo-1594035910387-fea47794261f?q=80&w=800&auto=format&fit=crop" alt="Royal Incense" class="w-full h-full object-cover pointer-events-none">
+                        <div class="absolute inset-0 pointer-events-none" style="background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);"></div>
+                        <span class="absolute bottom-4 left-4 text-gray-300 uppercase" style="font-size:10px; font-family:monospace; letter-spacing:0.15em;">04 / Royal Incense</span>
+                    </div>
+
+                    <!-- Card 5 -->
+                    <div class="shuffle-card absolute inset-0 w-full h-full overflow-hidden shadow-2xl bg-gray-900"
+                         style="border-radius:12px; border:1px solid rgba(255,255,255,0.1); transform: translate(-32px,32px) scale(0.84) rotate(-4deg); z-index:10; opacity:0.35;">
+                        <img src="https://images.unsplash.com/photo-1547887537-6158d64c35b3?q=80&w=800&auto=format&fit=crop" alt="Parisian Rose" class="w-full h-full object-cover pointer-events-none">
+                        <div class="absolute inset-0 pointer-events-none" style="background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);"></div>
+                        <span class="absolute bottom-4 left-4 text-gray-300 uppercase" style="font-size:10px; font-family:monospace; letter-spacing:0.15em;">05 / Parisian Rose</span>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Categories Section -->
+    <main id="categories" class="max-w-7xl mx-auto px-6 py-20">
+        <h2 class="text-3xl font-serif text-center mb-12">Browse by Collection</h2>
+        <div class="grid gap-8" style="grid-template-columns: 1fr 1fr;">
+
+            <div class="relative group overflow-hidden bg-black flex items-center justify-center text-center px-6 cursor-pointer shadow-md hover:shadow-xl transition-shadow duration-500" style="height:320px; border-radius:8px;">
+                <div class="absolute inset-0 z-10 transition-all duration-700" style="background: linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.5), rgba(0,0,0,0.3));"></div>
+                <div class="absolute inset-0" style="background: radial-gradient(circle at center, rgba(112,83,53,0.3) 0%, transparent 70%);"></div>
+                <div class="relative z-20 transform transition-transform duration-500 group-hover:-translate-y-2">
+                    <h3 class="text-3xl font-serif text-white mb-3 tracking-wide">Middle Eastern Collection</h3>
+                    <p class="text-gray-300 text-sm max-w-xs mx-auto mb-6" style="opacity:0.8;">Rich ouds, warm ambers, spices, and beast-mode performance profiles.</p>
+                    <a href="/products?category=middle-eastern" class="inline-block border-b border-white text-white uppercase text-xs tracking-widest pb-1 hover:text-scentAmber hover:border-scentAmber transition-colors duration-300">Discover Oud &amp; Spice</a>
+                </div>
+            </div>
+
+            <div class="relative group overflow-hidden bg-gray-900 flex items-center justify-center text-center px-6 cursor-pointer shadow-md hover:shadow-xl transition-shadow duration-500" style="height:320px; border-radius:8px;">
+                <div class="absolute inset-0 z-10 transition-all duration-700" style="background: linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.5), rgba(0,0,0,0.3));"></div>
+                <div class="absolute inset-0" style="background: radial-gradient(circle at center, rgba(212,175,55,0.15) 0%, transparent 70%);"></div>
+                <div class="relative z-20 transform transition-transform duration-500 group-hover:-translate-y-2">
+                    <h3 class="text-3xl font-serif text-white mb-3 tracking-wide">Designer Collection</h3>
+                    <p class="text-gray-300 text-sm max-w-xs mx-auto mb-6" style="opacity:0.8;">Fresh, mass-pleasing, high-fashion staples perfect for daily signatures.</p>
+                    <a href="/products?category=designer" class="inline-block border-b border-white text-white uppercase text-xs tracking-widest pb-1 hover:text-scentAmber hover:border-scentAmber transition-colors duration-300">Discover Classics</a>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Cycling Banner Carousel -->
+    <section class="w-full relative overflow-hidden bg-black my-8 group" style="height:450px;">
+
+        <!-- Banner 1 -->
+        <div class="promo-slide absolute inset-0 w-full h-full flex items-center transition-opacity duration-1000 ease-in-out" style="opacity:1; z-index:10;">
+            <img src="https://images.unsplash.com/photo-1594035910387-fea47794261f?q=80&w=1600&auto=format&fit=crop" alt="Promo 1"
+                 class="absolute inset-0 w-full h-full object-cover pointer-events-none mix-blend-luminosity" style="opacity:0.4;">
+            <div class="absolute inset-0 z-10" style="background: linear-gradient(to right, rgba(0,0,0,0.8), rgba(0,0,0,0.4), transparent);"></div>
+            <div class="max-w-7xl mx-auto px-6 text-white w-full relative z-20">
+                <div class="max-w-xl">
+                    <span class="text-xs uppercase tracking-widest text-scentAmber font-semibold block mb-3">Limited Spotlight</span>
+                    <h2 class="text-5xl font-serif mb-4 leading-tight tracking-wide">The Imperial Oud &amp; Amber Symphony</h2>
+                    <p class="text-gray-300 text-base mb-8 font-light leading-relaxed">Experience rich smoky agarwood layers fused with liquid Cambodian resins and soft vanilla undertones.</p>
+                    <a href="/products?collection=imperial" class="inline-block bg-white text-scentCharcoal hover:bg-scentAmber font-semibold px-6 py-3 text-xs uppercase tracking-widest transition-all duration-300 shadow-lg" style="border-radius:2px;">Explore Premium Blends</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Banner 2 -->
+        <div class="promo-slide absolute inset-0 w-full h-full flex items-center transition-opacity duration-1000 ease-in-out pointer-events-none" style="opacity:0; z-index:0;">
+            <img src="https://images.unsplash.com/photo-1547887537-6158d64c35b3?q=80&w=1600&auto=format&fit=crop" alt="Promo 2"
+                 class="absolute inset-0 w-full h-full object-cover pointer-events-none mix-blend-luminosity" style="opacity:0.35;">
+            <div class="absolute inset-0 z-10" style="background: linear-gradient(to right, rgba(0,0,0,0.85), rgba(0,0,0,0.5), transparent);"></div>
+            <div class="max-w-7xl mx-auto px-6 text-white w-full relative z-20">
+                <div class="max-w-xl">
+                    <span class="text-xs uppercase tracking-widest text-scentAmber font-semibold block mb-3">House Exclusive</span>
+                    <h2 class="text-5xl font-serif mb-4 leading-tight tracking-wide">30% Off Chanel Masterpieces</h2>
+                    <p class="text-gray-300 text-base mb-8 font-light leading-relaxed">Elevate your aura with the timeless elegance of Chanel. Enjoy an exclusive 30% reduction on our entire curated collection of designer classics.</p>
+                    <div class="flex items-center space-x-4">
+                        <span class="text-scentAmber px-4 py-2 font-mono text-sm uppercase tracking-wider" style="border: 1px dashed rgba(212,175,55,0.6); border-radius:4px; background:rgba(0,0,0,0.4);">Code: CHANEL30</span>
+                        <a href="/products?brand=chanel" class="bg-scentAmber text-scentCharcoal font-semibold px-6 py-3 text-xs uppercase tracking-widest hover:bg-white transition-all duration-300" style="border-radius:2px;">Claim Offer</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dots -->
+        <div class="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-30 flex space-x-3">
+            <button class="slide-dot w-2 h-2 rounded-full bg-white transition-all duration-300" style="opacity:1;" onclick="showSlide(0)"></button>
+            <button class="slide-dot w-2 h-2 rounded-full bg-white transition-all duration-300" style="opacity:0.4;" onclick="showSlide(1)"></button>
+        </div>
+    </section>
+
+    <!-- Featured Products -->
+    <section class="bg-white py-20 px-6 border-t border-gray-100">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex justify-between items-end mb-12">
+                <div>
+                    <h2 class="text-3xl font-serif">Curated Arrivals</h2>
+                    <p class="text-gray-500 text-sm mt-1">Handpicked fragrances trending right now</p>
+                </div>
+                <a href="/products" class="text-sm font-medium text-scentEarth hover:text-scentAmber transition-colors duration-300 group">
+                    View All Products <span class="inline-block transform group-hover:translate-x-1 transition-transform duration-300">&rarr;</span>
+                </a>
+            </div>
+
+            <div class="grid gap-8" style="grid-template-columns: repeat(4, 1fr);">
+
+                <!-- Product 1 -->
+                <div class="group flex flex-col transform transition-all duration-300 hover:-translate-y-1">
+                    <div class="bg-gray-50 p-6 flex items-center justify-center relative overflow-hidden mb-4 border border-gray-100 transition-all duration-300 group-hover:shadow-md" style="height:288px; border-radius:6px;">
+                        <span class="absolute top-3 left-3 bg-gray-900 text-white uppercase font-semibold px-2 py-0 z-10 shadow-sm" style="font-size:10px; letter-spacing:0.05em; border-radius:3px;">Middle Eastern</span>
+                        <img src="https://images.unsplash.com/photo-1541643600914-78b084683601?q=80&w=400&auto=format&fit=crop" alt="Khamrah" class="object-contain transform transition-transform duration-700 ease-out group-hover:scale-105" style="max-height:176px;">
+                    </div>
+                    <span class="text-xs text-gray-400 uppercase tracking-wider mb-1">Lattafa</span>
+                    <h3 class="font-medium text-gray-800 group-hover:text-scentAmber transition-colors duration-300 mb-1">Khamrah Eau De Parfum</h3>
+                    <p class="text-sm font-semibold text-gray-900 mb-3">$42.00</p>
+                    <a href="#" class="mt-auto text-center border border-scentCharcoal text-xs font-semibold py-2 transition-all duration-300 hover:bg-scentCharcoal hover:text-white" style="border-radius:4px;">View Details</a>
+                </div>
+
+                <!-- Product 2 -->
+                <div class="group flex flex-col transform transition-all duration-300 hover:-translate-y-1">
+                    <div class="bg-gray-50 p-6 flex items-center justify-center relative overflow-hidden mb-4 border border-gray-100 transition-all duration-300 group-hover:shadow-md" style="height:288px; border-radius:6px;">
+                        <span class="absolute top-3 left-3 bg-gray-900 text-white uppercase font-semibold px-2 py-0 z-10 shadow-sm" style="font-size:10px; letter-spacing:0.05em; border-radius:3px;">Designer</span>
+                        <img src="https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=400&auto=format&fit=crop" alt="Bleu De Chanel" class="object-contain transform transition-transform duration-700 ease-out group-hover:scale-105" style="max-height:176px;">
+                    </div>
+                    <span class="text-xs text-gray-400 uppercase tracking-wider mb-1">Chanel</span>
+                    <h3 class="font-medium text-gray-800 group-hover:text-scentAmber transition-colors duration-300 mb-1">Bleu de Chanel EdP</h3>
+                    <p class="text-sm font-semibold text-gray-900 mb-3">$145.00</p>
+                    <a href="#" class="mt-auto text-center border border-scentCharcoal text-xs font-semibold py-2 transition-all duration-300 hover:bg-scentCharcoal hover:text-white" style="border-radius:4px;">View Details</a>
+                </div>
+
+                <!-- Product 3 -->
+                <div class="group flex flex-col transform transition-all duration-300 hover:-translate-y-1">
+                    <div class="bg-gray-50 p-6 flex items-center justify-center relative overflow-hidden mb-4 border border-gray-100 transition-all duration-300 group-hover:shadow-md" style="height:288px; border-radius:6px;">
+                        <span class="absolute top-3 left-3 bg-gray-900 text-white uppercase font-semibold px-2 py-0 z-10 shadow-sm" style="font-size:10px; letter-spacing:0.05em; border-radius:3px;">Middle Eastern</span>
+                        <img src="https://images.unsplash.com/photo-1523293182086-7651a899d37f?q=80&w=400&auto=format&fit=crop" alt="Club De Nuit" class="object-contain transform transition-transform duration-700 ease-out group-hover:scale-105" style="max-height:176px;">
+                    </div>
+                    <span class="text-xs text-gray-400 uppercase tracking-wider mb-1">Armaf</span>
+                    <h3 class="font-medium text-gray-800 group-hover:text-scentAmber transition-colors duration-300 mb-1">Club De Nuit Intense Man</h3>
+                    <p class="text-sm font-semibold text-gray-900 mb-3">$38.00</p>
+                    <a href="#" class="mt-auto text-center border border-scentCharcoal text-xs font-semibold py-2 transition-all duration-300 hover:bg-scentCharcoal hover:text-white" style="border-radius:4px;">View Details</a>
+                </div>
+
+                <!-- Product 4 -->
+                <div class="group flex flex-col transform transition-all duration-300 hover:-translate-y-1">
+                    <div class="bg-gray-50 p-6 flex items-center justify-center relative overflow-hidden mb-4 border border-gray-100 transition-all duration-300 group-hover:shadow-md" style="height:288px; border-radius:6px;">
+                        <span class="absolute top-3 left-3 bg-gray-900 text-white uppercase font-semibold px-2 py-0 z-10 shadow-sm" style="font-size:10px; letter-spacing:0.05em; border-radius:3px;">Designer</span>
+                        <img src="https://images.unsplash.com/photo-1594035910387-fea47794261f?q=80&w=400&auto=format&fit=crop" alt="Sauvage Elixir" class="object-contain transform transition-transform duration-700 ease-out group-hover:scale-105" style="max-height:176px;">
+                    </div>
+                    <span class="text-xs text-gray-400 uppercase tracking-wider mb-1">Dior</span>
+                    <h3 class="font-medium text-gray-800 group-hover:text-scentAmber transition-colors duration-300 mb-1">Sauvage Elixir</h3>
+                    <p class="text-sm font-semibold text-gray-900 mb-3">$180.00</p>
+                    <a href="#" class="mt-auto text-center border border-scentCharcoal text-xs font-semibold py-2 transition-all duration-300 hover:bg-scentCharcoal hover:text-white" style="border-radius:4px;">View Details</a>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Poetic Interlude Section -->
+    <section class="w-full py-28 relative overflow-hidden flex flex-col items-center justify-center border-t border-gray-900" style="background-color:#0c0a09;">
+        <div class="absolute inset-0 pointer-events-none" style="background: radial-gradient(ellipse at center, rgba(212,175,55,0.08) 0%, transparent 60%);"></div>
+
+        <div class="max-w-4xl mx-auto px-6 text-center relative z-10 w-full flex flex-col items-center">
+
+            <div class="text-scentAmber mb-10" style="opacity:0.5; animation: pulse 4s ease-in-out infinite;">
+                <svg class="w-8 h-8 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="0.75" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
+                </svg>
+            </div>
+
+            <div id="poem-container" class="relative w-full" style="height: 160px;">
+
+                <div class="poem-stanza absolute inset-0 flex items-center justify-center transition-opacity ease-in-out" style="opacity:1; z-index:10; transition-duration:3000ms;">
+                    <p class="text-3xl font-serif italic text-gray-300 tracking-wide leading-loose">
+                        "A whisper on the collarbone,<br>A memory in the air..."
+                    </p>
+                </div>
+                <div class="poem-stanza absolute inset-0 flex items-center justify-center transition-opacity ease-in-out pointer-events-none" style="opacity:0; z-index:0; transition-duration:3000ms;">
+                    <p class="text-3xl font-serif italic text-gray-300 tracking-wide leading-loose">
+                        "Before a single word is spoken,<br>The essence lingers there."
+                    </p>
+                </div>
+                <div class="poem-stanza absolute inset-0 flex items-center justify-center transition-opacity ease-in-out pointer-events-none" style="opacity:0; z-index:0; transition-duration:3000ms;">
+                    <p class="text-3xl font-serif italic text-gray-300 tracking-wide leading-loose">
+                        "More than glass and golden oils,<br>An invisible embrace."
+                    </p>
+                </div>
+                <div class="poem-stanza absolute inset-0 flex items-center justify-center transition-opacity ease-in-out pointer-events-none" style="opacity:0; z-index:0; transition-duration:3000ms;">
+                    <p class="text-3xl font-serif italic text-gray-300 tracking-wide leading-loose">
+                        "The art of leaving who you are,<br>Within an empty space."
+                    </p>
+                </div>
+
+            </div>
+
+            <div class="w-16 mt-6" style="height:1px; background-color: rgba(212,175,55,0.4);"></div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-scentCharcoal text-gray-400 py-12 px-6 text-center text-sm">
+        <p>&copy; 2026 Presense E-Commerce. Built with Node.js, Express, &amp; MongoDB.</p>
+    </footer>
+
+    <!-- JS: Falling Petals -->
+    <script>
+        const canvas = document.getElementById('scent-petals');
+        const ctx = canvas.getContext('2d');
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+        window.addEventListener('resize', () => { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; });
+        const petals = [];
+        class Petal {
+            constructor() { this.reset(); this.y = Math.random() * height; }
+            reset() {
+                this.x = Math.random() * width; this.y = -20; this.size = Math.random() * 5 + 4;
+                this.speedY = Math.random() * 0.8 + 0.4; this.speedX = Math.random() * 1.2 - 0.4;
+                this.opacity = Math.random() * 0.4 + 0.15; this.flip = Math.random(); this.flipSpeed = Math.random() * 0.02 + 0.01;
+                this.color = Math.random() > 0.5 ? '212, 175, 55' : '112, 83, 53';
+            }
+            update(scrollImpact) {
+                this.y += this.speedY + (scrollImpact * 0.2); this.x += this.speedX + (scrollImpact * 0.9); this.flip += this.flipSpeed;
+                if (this.y > height || this.x > width || this.x < -20) this.reset();
+            }
+            draw() {
+                ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.flip); ctx.scale(Math.sin(this.flip), 1); ctx.beginPath();
+                ctx.fillStyle = `rgba(${this.color}, ${this.opacity})`;
+                for (let i = 0; i < 4; i++) { ctx.rotate(Math.PI / 2); ctx.moveTo(0, 0); ctx.quadraticCurveTo(this.size, this.size / 2, this.size, 0); ctx.quadraticCurveTo(this.size, -this.size / 2, 0, 0); }
+                ctx.fill(); ctx.restore();
+            }
+        }
+        for (let i = 0; i < 20; i++) petals.push(new Petal());
+        let lastScrollY = window.scrollY, scrollVelocity = 0;
+        window.addEventListener('scroll', () => { let s = window.scrollY; scrollVelocity = Math.abs(s - lastScrollY); lastScrollY = s; });
+        function renderLoop() { ctx.clearRect(0, 0, width, height); scrollVelocity *= 0.94; if (scrollVelocity < 0.05) scrollVelocity = 0; petals.forEach(p => { p.update(scrollVelocity); p.draw(); }); requestAnimationFrame(renderLoop); }
+        renderLoop();
+    </script>
+
+    <!-- JS: Banner Carousel -->
+    <script>
+        let currentSlideIndex = 0;
+        const slides = document.querySelectorAll('.promo-slide');
+        const dots = document.querySelectorAll('.slide-dot');
+        let sliderInterval;
+        function showSlide(index) {
+            currentSlideIndex = index;
+            slides.forEach((slide, i) => {
+                if (i === index) {
+                    slide.style.opacity = '1'; slide.style.zIndex = '10'; slide.classList.remove('pointer-events-none');
+                    dots[i].style.opacity = '1';
+                } else {
+                    slide.style.opacity = '0'; slide.style.zIndex = '0'; slide.classList.add('pointer-events-none');
+                    dots[i].style.opacity = '0.4';
+                }
+            });
+            clearInterval(sliderInterval); startAutoCycle();
+        }
+        function startAutoCycle() { sliderInterval = setInterval(() => { showSlide((currentSlideIndex + 1) % slides.length); }, 6000); }
+        startAutoCycle();
+    </script>
+
+    <!-- JS: 5-Card Shuffle -->
+    <script>
+        const cards = document.querySelectorAll('.shuffle-card');
+        const deckContainer = document.getElementById('interactive-deck');
+        let cardOrder = [0, 1, 2, 3, 4];
+        let shuffleInterval, isShuffling = false;
+        const stackStates = [
+            { transform: 'translate(0px,0px) scale(1) rotate(0deg)', zIndex: '50', opacity: '1' },
+            { transform: 'translate(16px,-16px) scale(0.96) rotate(2deg)', zIndex: '40', opacity: '0.90' },
+            { transform: 'translate(32px,-32px) scale(0.92) rotate(4deg)', zIndex: '30', opacity: '0.75' },
+            { transform: 'translate(-16px,16px) scale(0.88) rotate(-2deg)', zIndex: '20', opacity: '0.55' },
+            { transform: 'translate(-32px,32px) scale(0.84) rotate(-4deg)', zIndex: '10', opacity: '0.35' }
+        ];
+        function executeCardShuffle() {
+            if (isShuffling || cards.length < 5) return;
+            isShuffling = true;
+            const front = cardOrder[0];
+            cards[front].style.transform = 'translate(-135%, 45px) scale(0.92) rotate(-16deg)';
+            cards[front].style.opacity = '0';
+            for (let i = 1; i < 5; i++) {
+                const s = stackStates[i - 1];
+                cards[cardOrder[i]].style.transform = s.transform;
+                cards[cardOrder[i]].style.zIndex = s.zIndex;
+                cards[cardOrder[i]].style.opacity = s.opacity;
+            }
+            setTimeout(() => {
+                const b = stackStates[4];
+                cards[front].style.zIndex = b.zIndex;
+                cards[front].style.transform = b.transform;
+                cards[front].style.opacity = b.opacity;
+                cardOrder.push(cardOrder.shift());
+                isShuffling = false;
+            }, 450);
+        }
+        function startAutoShuffleTimer() { shuffleInterval = setInterval(executeCardShuffle, 4000); }
+        if (deckContainer) {
+            deckContainer.addEventListener('click', (e) => {
+                e.preventDefault(); clearInterval(shuffleInterval); executeCardShuffle(); startAutoShuffleTimer();
+            });
+        }
+        startAutoShuffleTimer();
+    </script>
+
+    <!-- JS: Poem Cycler -->
+    <script>
+        const stanzas = document.querySelectorAll('.poem-stanza');
+        let currentStanza = 0;
+        function cyclePoem() {
+            const next = (currentStanza + 1) % stanzas.length;
+            stanzas[currentStanza].style.opacity = '0'; stanzas[currentStanza].style.zIndex = '0'; stanzas[currentStanza].classList.add('pointer-events-none');
+            stanzas[next].style.opacity = '1'; stanzas[next].style.zIndex = '10'; stanzas[next].classList.remove('pointer-events-none');
+            currentStanza = next;
+        }
+        if (stanzas.length > 0) setInterval(cyclePoem, 8500);
+    </script>
+
+</body>
+</html>

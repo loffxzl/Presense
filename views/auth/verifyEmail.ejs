@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Email | Presense</title>
+
+    <!-- ✅ CSP-safe: cdnjs Tailwind v2 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
+
+    <style>
+        :root {
+            --cream:    #FDFBF7;
+            --amber:    #D4AF37;
+            --charcoal: #1A1A1A;
+        }
+        .bg-scentCream    { background-color: var(--cream); }
+        .bg-scentAmber    { background-color: var(--amber); }
+        .bg-scentCharcoal { background-color: var(--charcoal); }
+        .text-scentAmber    { color: var(--amber); }
+        .text-scentCharcoal { color: var(--charcoal); }
+        .hover\:bg-scentAmber:hover { background-color: var(--amber); }
+        .focus\:border-scentAmber:focus { border-color: var(--amber); }
+        .font-serif { font-family: Georgia, Cambria, "Times New Roman", Times, serif; }
+        .tracking-code { letter-spacing: 0.5em; }
+    </style>
+</head>
+<body class="bg-scentCream min-h-screen flex items-center justify-center p-6">
+
+    <div class="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl border border-gray-100 text-center">
+
+        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6 text-scentAmber">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+            </svg>
+        </div>
+
+        <h2 class="text-2xl font-serif font-bold text-scentCharcoal mb-2">Check your email</h2>
+        <p class="text-gray-500 text-sm mb-8">We've sent a 6-digit verification code to your registered email address. Enter it below to complete your registration.</p>
+
+        <form action="/verify-email" method="POST" class="space-y-6">
+            <div>
+                <input type="text" name="code" maxlength="6" pattern="\d{6}" placeholder="000000" required
+                       class="w-full text-center text-2xl tracking-code px-4 py-4 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-scentAmber transition">
+            </div>
+
+            <button type="submit"
+                    class="w-full bg-scentCharcoal text-white py-3 rounded-lg font-semibold hover:bg-scentAmber transition duration-300">
+                Verify Code
+            </button>
+        </form>
+
+        <p class="text-sm text-gray-500 mt-8">
+            Didn't receive the code?
+            <button onclick="resendCode()" class="text-scentAmber font-semibold hover:underline">Resend it</button>
+        </p>
+    </div>
+
+    <script>
+        function resendCode() {
+            alert("A new code has been sent to your email.");
+        }
+    </script>
+</body>
+</html>

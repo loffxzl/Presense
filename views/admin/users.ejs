@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> | Presense</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
+
+    <style>
+        :root {
+            --amber: #D4AF37;
+            --charcoal: #1A1A1A;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f7f8fa; display: flex; min-height: 100vh; }
+        .font-serif { font-family: Georgia, Cambria, "Times New Roman", Times, serif; }
+
+        /* ── Sidebar ── */
+        .sidebar {
+            width: 256px; flex-shrink: 0;
+            background: #ffffff;
+            border-right: 1px solid #e8eaed;
+            display: flex; flex-direction: column;
+            height: 100vh; position: sticky; top: 0;
+        }
+        .sidebar-logo-wrap {
+            padding: 20px 20px 16px;
+            border-bottom: 1px solid #f0f1f3;
+        }
+        .sidebar-logo {
+            font-size: 1.2rem; font-weight: 700; letter-spacing: 0.15em;
+            color: var(--charcoal); text-transform: uppercase;
+        }
+        .sidebar-logo span { color: var(--amber); }
+        .sidebar-subtitle {
+            font-size: 0.65rem; color: #9ca3af; letter-spacing: 0.12em;
+            text-transform: uppercase; margin-top: 2px;
+        }
+
+        .nav-section-label {
+            font-size: 0.65rem; font-weight: 600; color: #b0b7c3;
+            text-transform: uppercase; letter-spacing: 0.1em;
+            padding: 20px 20px 8px;
+        }
+        .nav-link {
+            display: flex; align-items: center; gap: 10px;
+            padding: 9px 16px; margin: 1px 8px; border-radius: 8px;
+            color: #6b7280; font-size: 0.875rem; font-weight: 500;
+            text-decoration: none; transition: all 0.15s;
+        }
+        .nav-link:hover { background: #f5f6f8; color: #111827; }
+        .nav-link.active {
+            background: #faf6e4; color: #92700a; font-weight: 600;
+        }
+        .nav-link.active .nav-icon { color: var(--amber); }
+        .nav-icon { width: 16px; height: 16px; flex-shrink: 0; }
+
+        .nav-badge {
+            margin-left: auto; background: #f3f4f6; color: #6b7280;
+            font-size: 0.65rem; font-weight: 600; padding: 1px 7px;
+            border-radius: 20px;
+        }
+        .nav-link.active .nav-badge { background: #f0e8c0; color: #92700a; }
+
+        /* Sidebar footer */
+        .sidebar-footer {
+            margin-top: auto; border-top: 1px solid #f0f1f3; padding: 16px;
+        }
+        .admin-card {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 12px; border-radius: 10px; background: #f7f8fa;
+            margin-bottom: 8px;
+        }
+        .admin-avatar {
+            width: 34px; height: 34px; border-radius: 8px;
+            background: var(--charcoal); color: #fff;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 0.8rem; flex-shrink: 0;
+        }
+        .admin-name { font-size: 0.85rem; font-weight: 600; color: #111827; }
+        .admin-role { font-size: 0.7rem; color: #9ca3af; }
+        .signout-btn {
+            display: flex; align-items: center; gap: 8px;
+            width: 100%; padding: 8px 12px; border-radius: 8px;
+            color: #6b7280; font-size: 0.8rem; font-weight: 500;
+            background: none; border: none; cursor: pointer; text-decoration: none;
+            transition: all 0.15s;
+        }
+        .signout-btn:hover { background: #fef2f2; color: #dc2626; }
+
+        /* ── Main ── */
+        .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+        /* Top bar */
+        .topbar {
+            background: #fff; border-bottom: 1px solid #e8eaed;
+            padding: 0 32px; height: 60px;
+            display: flex; align-items: center; justify-content: space-between;
+            flex-shrink: 0;
+        }
+        .topbar-breadcrumb { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; }
+        .breadcrumb-sep { color: #d1d5db; }
+        .breadcrumb-current { color: #111827; font-weight: 600; }
+        .breadcrumb-parent { color: #9ca3af; }
+        .topbar-actions { display: flex; align-items: center; gap: 12px; }
+        .topbar-btn {
+            width: 34px; height: 34px; border-radius: 8px; border: 1px solid #e5e7eb;
+            background: #fff; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; color: #6b7280; transition: all 0.15s; position: relative;
+        }
+        .topbar-btn:hover { background: #f5f6f8; color: #111827; }
+        .notif-dot {
+            width: 7px; height: 7px; background: #ef4444; border-radius: 50%;
+            position: absolute; top: 6px; right: 6px; border: 1.5px solid #fff;
+        }
+
+        /* ── Content ── */
+        .content { flex: 1; overflow-y: auto; padding: 28px 32px; }
+
+        /* Page header */
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .page-title { font-size: 1.3rem; font-weight: 700; color: #111827; }
+        .page-subtitle { font-size: 0.8rem; color: #9ca3af; margin-top: 2px; }
+
+        /* Stat cards */
+        .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+        .stat-card {
+            background: #fff; border: 1px solid #e8eaed; border-radius: 12px;
+            padding: 18px 20px; display: flex; align-items: center; gap: 14px;
+        }
+        .stat-icon {
+            width: 42px; height: 42px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .stat-label { font-size: 0.75rem; color: #9ca3af; font-weight: 500; margin-bottom: 2px; }
+        .stat-value { font-size: 1.4rem; font-weight: 700; color: #111827; }
+        .stat-change { font-size: 0.72rem; color: #16a34a; font-weight: 500; margin-top: 2px; }
+
+        /* Table card */
+        .table-card {
+            background: #fff; border: 1px solid #e8eaed; border-radius: 12px;
+            overflow: hidden;
+        }
+        .table-toolbar {
+            padding: 16px 20px; border-bottom: 1px solid #f0f1f3;
+            display: flex; align-items: center; gap: 12px;
+        }
+        .search-wrap { position: relative; flex: 1; max-width: 360px; }
+        .search-icon {
+            position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+            width: 15px; height: 15px; color: #9ca3af; pointer-events: none;
+        }
+        .search-input {
+            width: 100%; padding: 8px 12px 8px 34px;
+            border: 1.5px solid #e5e7eb; border-radius: 8px;
+            font-size: 0.85rem; outline: none; background: #fafafa;
+            transition: all 0.15s; color: #111827;
+        }
+        .search-input:focus { border-color: var(--amber); background: #fff; box-shadow: 0 0 0 3px rgba(212,175,55,0.08); }
+        .search-input::placeholder { color: #b0b7c3; }
+
+        .btn-primary {
+            background: var(--charcoal); color: #fff;
+            padding: 8px 16px; border-radius: 8px; font-size: 0.85rem;
+            font-weight: 500; border: none; cursor: pointer; transition: background 0.15s;
+            white-space: nowrap;
+        }
+        .btn-primary:hover { background: #333; }
+        .btn-ghost {
+            background: #fff; color: #6b7280;
+            padding: 8px 14px; border-radius: 8px; font-size: 0.85rem;
+            font-weight: 500; border: 1.5px solid #e5e7eb; cursor: pointer;
+            transition: all 0.15s; text-decoration: none; display: flex; align-items: center; gap: 5px;
+        }
+        .btn-ghost:hover { border-color: #9ca3af; color: #374151; }
+
+        /* Table */
+        table { width: 100%; border-collapse: collapse; }
+        thead tr { background: #fafbfc; border-bottom: 1px solid #f0f1f3; }
+        th {
+            padding: 11px 16px; text-align: left;
+            font-size: 0.7rem; font-weight: 600; color: #9ca3af;
+            text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap;
+        }
+        th:first-child { padding-left: 20px; }
+        th:last-child { padding-right: 20px; text-align: right; }
+        td { padding: 13px 16px; border-bottom: 1px solid #f7f8fa; vertical-align: middle; }
+        td:first-child { padding-left: 20px; }
+        td:last-child { padding-right: 20px; text-align: right; }
+        tbody tr { transition: background 0.12s; }
+        tbody tr:hover { background: #fafbfc; }
+        tbody tr:last-child td { border-bottom: none; }
+
+        .row-num { font-size: 0.8rem; color: #d1d5db; font-weight: 500; }
+        .user-cell { display: flex; align-items: center; gap: 10px; }
+        .user-avatar {
+            width: 32px; height: 32px; border-radius: 8px;
+            background: #f3f4f6; color: #374151;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 0.75rem; flex-shrink: 0;
+        }
+        .user-name { font-size: 0.875rem; font-weight: 500; color: #111827; }
+        .user-email { font-size: 0.8rem; color: #9ca3af; }
+
+        .badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 3px 10px; border-radius: 20px;
+            font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
+        }
+        .badge-active { background: #dcfce7; color: #15803d; }
+        .badge-blocked { background: #fee2e2; color: #dc2626; }
+        .badge-dot {
+            width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0;
+        }
+        .badge-active .badge-dot { background: #16a34a; }
+        .badge-blocked .badge-dot { background: #dc2626; }
+
+        .date-cell { font-size: 0.8rem; color: #9ca3af; }
+
+        .btn-block-sm {
+            font-size: 0.75rem; font-weight: 600; padding: 5px 12px; border-radius: 6px;
+            color: #dc2626; background: #fff; border: 1.5px solid #fecaca;
+            cursor: pointer; transition: all 0.15s;
+        }
+        .btn-block-sm:hover { background: #fef2f2; border-color: #f87171; }
+        .btn-unblock-sm {
+            font-size: 0.75rem; font-weight: 600; padding: 5px 12px; border-radius: 6px;
+            color: #15803d; background: #fff; border: 1.5px solid #bbf7d0;
+            cursor: pointer; transition: all 0.15s;
+        }
+        .btn-unblock-sm:hover { background: #f0fdf4; border-color: #4ade80; }
+
+        /* Table footer */
+        .table-footer {
+            padding: 14px 20px; border-top: 1px solid #f0f1f3;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .results-text { font-size: 0.8rem; color: #9ca3af; }
+
+        /* Pagination */
+        .pagination { display: flex; align-items: center; gap: 4px; }
+        .page-btn {
+            min-width: 32px; height: 32px; padding: 0 8px; border-radius: 7px;
+            border: 1.5px solid #e5e7eb; background: #fff;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.8rem; font-weight: 500; color: #6b7280;
+            text-decoration: none; transition: all 0.15s; cursor: pointer;
+        }
+        .page-btn:hover { border-color: var(--amber); color: #111827; }
+        .page-btn.active { background: var(--charcoal); color: #fff; border-color: var(--charcoal); }
+        .page-btn.disabled { opacity: 0.4; pointer-events: none; }
+
+        /* Empty state */
+        .empty-state { text-align: center; padding: 56px 24px; color: #9ca3af; }
+        .empty-icon { width: 48px; height: 48px; margin: 0 auto 14px; opacity: 0.3; }
+        .empty-title { font-size: 0.95rem; font-weight: 600; color: #6b7280; margin-bottom: 4px; }
+        .empty-sub { font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+
+    <!-- ══ Sidebar ══ -->
+    <aside class="sidebar">
+        <!-- Logo -->
+        <div class="sidebar-logo-wrap">
+            <div class="font-serif sidebar-logo">Pres<span>e</span>nse</div>
+            <div class="sidebar-subtitle">Admin Panel</div>
+        </div>
+
+        <!-- Nav -->
+        <div style="flex:1; overflow-y:auto; padding: 8px 0;">
+            <div class="nav-section-label">Main Menu</div>
+
+            <a href="#" class="nav-link">
+                <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                Dashboard
+            </a>
+            <a href="#" class="nav-link">
+                <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                Products
+            </a>
+            <a href="#" class="nav-link">
+                <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                Orders
+            </a>
+            <a href="/admin/users" class="nav-link active">
+                <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                Customers
+                <span class="nav-badge"><%= totalUsers %></span>
+            </a>
+
+            <div class="nav-section-label">Reports & Tools</div>
+
+            <a href="#" class="nav-link">
+                <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                Sales Report
+            </a>
+            <a href="#" class="nav-link">
+                <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+                Coupons
+            </a>
+            <a href="#" class="nav-link">
+                <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+                Categories
+            </a>
+        </div>
+
+        <!-- Footer -->
+        <div class="sidebar-footer">
+            <div class="admin-card">
+                <div class="admin-avatar"><%= adminName.charAt(0).toUpperCase() %></div>
+                <div>
+                    <div class="admin-name"><%= adminName %></div>
+                    <div class="admin-role">Administrator</div>
+                </div>
+            </div>
+            <a href="/auth/logout" class="signout-btn">
+                <svg style="width:14px;height:14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                Sign Out
+            </a>
+        </div>
+    </aside>
+
+    <!-- ══ Main ══ -->
+    <div class="main">
+
+        <!-- Top bar -->
+        <div class="topbar">
+            <div class="topbar-breadcrumb">
+                <span class="breadcrumb-parent">Admin</span>
+                <span class="breadcrumb-sep">/</span>
+                <span class="breadcrumb-current">Customers</span>
+            </div>
+            <div class="topbar-actions">
+                <button class="topbar-btn">
+                    <svg style="width:16px;height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg>
+                </button>
+                <button class="topbar-btn">
+                    <svg style="width:16px;height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                    <span class="notif-dot"></span>
+                </button>
+                <div style="width:32px;height:32px;border-radius:8px;background:var(--charcoal);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;cursor:pointer;">
+                    <%= adminName.charAt(0).toUpperCase() %>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+
+            <!-- Page header -->
+            <div class="page-header">
+                <div>
+                    <div class="page-title">Customers</div>
+                    <div class="page-subtitle">View and manage all registered customer accounts</div>
+                </div>
+            </div>
+
+            <!-- Stat cards -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:#f0fdf4;">
+                        <svg style="width:20px;height:20px;color:#16a34a;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    </div>
+                    <div>
+                        <div class="stat-label">Total Customers</div>
+                        <div class="stat-value"><%= totalUsers %></div>
+                        <div class="stat-change">↑ All time</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:#eff6ff;">
+                        <svg style="width:20px;height:20px;color:#2563eb;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </div>
+                    <div>
+                        <div class="stat-label">Active</div>
+                        <div class="stat-value" style="color:#2563eb;">—</div>
+                        <div class="stat-change" style="color:#2563eb;">Verified accounts</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:#fef2f2;">
+                        <svg style="width:20px;height:20px;color:#dc2626;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                    </div>
+                    <div>
+                        <div class="stat-label">Blocked</div>
+                        <div class="stat-value" style="color:#dc2626;">—</div>
+                        <div class="stat-change" style="color:#dc2626;">Restricted access</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="table-card">
+
+                <!-- Toolbar -->
+                <div class="table-toolbar">
+                    <form action="/admin/users" method="GET" style="display:flex;align-items:center;gap:10px;width:100%;">
+                        <div class="search-wrap">
+                            <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg>
+                            <input type="text" name="search" value="<%= search %>"
+                                   placeholder="Search customers..." class="search-input" />
+                        </div>
+                        <button type="submit" class="btn-primary">Search</button>
+                        <% if (search) { %>
+                            <a href="/admin/users" class="btn-ghost">✕ Clear</a>
+                        <% } %>
+                    </form>
+                </div>
+
+                <!-- Table -->
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Customer</th>
+                            <th>Email</th>
+                            <th>Status</th>
+                            <th>Joined</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (users.length === 0) { %>
+                            <tr>
+                                <td colspan="6">
+                                    <div class="empty-state">
+                                        <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                        <div class="empty-title">No customers found</div>
+                                        <% if (search) { %><div class="empty-sub">Try a different search term</div><% } %>
+                                    </div>
+                                </td>
+                            </tr>
+                        <% } else { %>
+                            <% users.forEach((user, index) => { %>
+                                <tr>
+                                    <td><span class="row-num"><%= (currentPage - 1) * 10 + index + 1 %></span></td>
+                                    <td>
+                                        <div class="user-cell">
+                                            <div class="user-avatar"><%= user.name.charAt(0).toUpperCase() %></div>
+                                            <div>
+                                                <div class="user-name"><%= user.name %></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><span class="user-email"><%= user.email %></span></td>
+                                    <td>
+                                        <% if (user.status === 'active') { %>
+                                            <span class="badge badge-active"><span class="badge-dot"></span>Active</span>
+                                        <% } else { %>
+                                            <span class="badge badge-blocked"><span class="badge-dot"></span>Blocked</span>
+                                        <% } %>
+                                    </td>
+                                    <td><span class="date-cell"><%= new Date(user.createdAt).toLocaleDateString('en-IN') %></span></td>
+                                    <td>
+                                        <form
+                                            action="/admin/users/<%= user._id %>/toggle-status?_method=PATCH"
+                                            method="POST"
+                                            style="display:inline;"
+                                            onsubmit="return confirm('<%= user.status === `active` ? `Block` : `Unblock` %> <%= user.name %>?')"
+                                        >
+                                            <input type="hidden" name="search" value="<%= search %>" />
+                                            <input type="hidden" name="page" value="<%= currentPage %>" />
+                                            <% if (user.status === 'active') { %>
+                                                <button type="submit" class="btn-block-sm">Block</button>
+                                            <% } else { %>
+                                                <button type="submit" class="btn-unblock-sm">Unblock</button>
+                                            <% } %>
+                                        </form>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        <% } %>
+                    </tbody>
+                </table>
+
+                <!-- Table footer -->
+                <div class="table-footer">
+                    <span class="results-text">
+                        <% if (users.length > 0) { %>
+                            Showing <%= (currentPage - 1) * 10 + 1 %>–<%= Math.min(currentPage * 10, totalUsers) %> of <%= totalUsers %> customers
+                        <% } else { %>
+                            No results
+                        <% } %>
+                    </span>
+                    <% if (totalPages > 1) { %>
+                        <div class="pagination">
+                            <% if (currentPage > 1) { %>
+                                <a href="/admin/users?page=<%= currentPage - 1 %>&search=<%= search %>" class="page-btn">‹</a>
+                            <% } else { %>
+                                <span class="page-btn disabled">‹</span>
+                            <% } %>
+
+                            <% for (let i = 1; i <= totalPages; i++) { %>
+                                <a href="/admin/users?page=<%= i %>&search=<%= search %>"
+                                   class="page-btn <%= i === currentPage ? 'active' : '' %>"><%= i %></a>
+                            <% } %>
+
+                            <% if (currentPage < totalPages) { %>
+                                <a href="/admin/users?page=<%= currentPage + 1 %>&search=<%= search %>" class="page-btn">›</a>
+                            <% } else { %>
+                                <span class="page-btn disabled">›</span>
+                            <% } %>
+                        </div>
+                    <% } %>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
