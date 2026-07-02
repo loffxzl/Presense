@@ -1,8 +1,9 @@
 import bcrypt from 'bcrypt';
 import * as userRepository from '../repositories/userRepository.js';
 import { generateAccessToken, generateRefreshToken } from '../utils/jwt.js';
-import { sendOTPEmail } from '../utils/email.js';
+import { sendOTPEmail, sendResetEmail } from '../utils/email.js';
 import { signupSchema, loginSchema, otpSchema } from '../validators/authValidators.js';
+import crypto from 'crypto';
 
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
@@ -107,3 +108,49 @@ export const loginUser = async (data) => {
 
   return { role: 'user', accessToken, refreshToken, user };
 };
+
+export const forgotPassword = async (email) => {
+  const user = await userRepository.findUserByEmail(email.toLowerCase().trim());
+  if(!user) throw new Error(' No account found with the email');
+
+  if(user.passwordHash === 'google-oauth'){
+    throw new Error('this acount uses Google dign-in. Password reeset not available');
+  }
+
+  const token = crypto.randomBytes(32).toString('hex');
+  const expiry = new Date(Date.now() + 30 * 60 * 1000) //30 mins
+
+  await userRepository.updateUserById(user._id, {
+    emailVerificationToken:token,
+    emailVerificationExpiry:expiry
+  });
+
+  const resetLink = `${process.env.BASE_URL}/auth/reset-password/${token}`;
+  await sendResetEmail(user.email, resetLink);
+};
+
+export const resetPassword = async (token, {newPassword, confirmNewPassword}) => {
+  if(!newPassword || newPassword.length < 8){
+    throw new Error('Password must be 8 characters');
+  }
+
+  if(newPassword !== confirmNewPassword){
+    throw new Error('Password do not match');
+  }
+
+  const user = await userRepository.findUserByResetToken(token);
+  if(!user) throw new Error('invalid or expired reset link');
+   
+  if(user.emailVerificationExpiry < new Date()) throw new Error('Reset link has expired');
+
+  const passwordHash = await bcrypt.hash(newPassword,10);
+  await userRepository.updateUserById(user._id, {
+    passwordHash,
+    emailVerificationToken:undefined,
+    emailVerificationExpiry:undefined
+  });
+
+};
+
+
+

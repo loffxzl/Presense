@@ -31,3 +31,7 @@ export const updateUserById = async (id, data) => {
 export const updateUserStatus = async (id, status) => {
   return User.findByIdAndUpdate(id, { status }, { new: true });
 };
+
+export const findUserByResetToken = async (token) => {
+  return User.findOne({emailVerificationToken:token});
+};

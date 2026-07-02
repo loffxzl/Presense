@@ -31,3 +31,22 @@ export const sendOTPEmail = async (email, otp) => {
     `
   });
 };
+
+export const sendResetEmail = async (email, resetLink) => {
+  const transporter = createTransporter();
+  await transporter.sendMail({
+    from: `"Presense" <${process.env.EMAIL_USER}>`,
+    to: email,
+    subject: 'Reset Your Presense Password',
+    html: `
+      <div style="font-family: Georgia, serif; max-width: 480px; margin: 0 auto; padding: 32px; border: 1px solid #e5e7eb; border-radius: 12px;">
+        <h1 style="font-size: 24px; letter-spacing: 4px; text-transform: uppercase; color: #1A1A1A;">Presense</h1>
+        <p style="color: #6b7280; font-size: 14px;">You requested a password reset. Click the button below:</p>
+        <a href="${resetLink}" style="display:inline-block; margin: 24px 0; background:#1A1A1A; color:#fff; padding: 12px 28px; border-radius: 8px; text-decoration:none; font-size:14px; font-weight:600;">
+          Reset Password
+        </a>
+        <p style="color: #6b7280; font-size: 12px;">This link expires in 30 minutes. If you didn't request this, ignore this email.</p>
+      </div>
+    `
+  });
+};

@@ -20,4 +20,9 @@ router.get('/google/callback',
   authController.googleCallback
 );
 
+router.get('/forgot-password', authController.getForgotPasswordPage);
+router.post('/forgot-password', authController.postForgotPassword);
+router.get('/reset-password/:token', authController.getResetPasswordPage);
+router.post('/reset-password/:token', authController.postResetPassword);
+
 export default router;

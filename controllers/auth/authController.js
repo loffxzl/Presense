@@ -1,6 +1,7 @@
 import * as authService from '../../services/authService.js';
 import { generateAccessToken, generateRefreshToken } from '../../utils/jwt.js';
 import * as userRepository from '../../repositories/userRepository.js';
+import { success } from 'zod';
 
 const cookieOptions = (maxAge) => ({
   httpOnly: true,
@@ -111,5 +112,50 @@ export const googleCallback = async (req, res) => {
   } catch (err) {
     console.error('Google callback error:', err.message);
     res.redirect('/auth/login');
+  }
+};
+
+export const getForgotPasswordPage = (req,res) => {
+  res.render('auth/forgotPassword', {title:'forgot password', error:null , success:null })
+};
+
+export const postForgotPassword = async (req, res) => {
+  try {
+    await authService.forgotPassword(req.body.email);
+    res.render('auth/forgotPassword', {
+      title: 'Forgot Password',
+      error: null,
+      success: 'Reset link sent to your email'
+    });
+  } catch (err) {
+    res.render('auth/forgotPassword', { title: 'Forgot Password', error: err.message, success: null });
+  }
+};
+export const getResetPasswordPage = (req,res) => {
+
+    res.render('auth/resetPassword', {
+      title:'Reset Password',
+      error:null,
+      token:req.params.token
+    });
+  
+}
+
+export const postResetPassword = async (req, res) => {
+  try {
+    await authService.resetPassword(req.params.token, req.body);
+    res.render('auth/resetPassword', {
+      title: 'Reset Password',
+      error: null,
+      success: 'Password reset successfully. You can now login.',
+      token: null
+    });
+  } catch (err) {
+    res.render('auth/resetPassword', {
+      title: 'Reset Password',
+      error: err.message,
+      success: null,
+      token: req.params.token
+    });
   }
 };
