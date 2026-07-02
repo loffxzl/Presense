@@ -65,6 +65,7 @@
                 <a href="/" class="text-sm font-medium text-scentCharcoal hover:text-scentAmber transition-colors duration-300">Home</a>
                 <a href="/products" class="text-sm font-medium text-scentCharcoal hover:text-scentAmber transition-colors duration-300">Products</a>
                 <a href="/about" class="text-sm font-medium text-scentCharcoal hover:text-scentAmber transition-colors duration-300">About</a>
+                <a href="/auth/logout">Logout</a>
             </div>
 
             <!-- Right Side Icons & Profile -->
@@ -481,7 +482,7 @@
         startAutoShuffleTimer();
     </script>
 
-    <!-- JS ENGINE 4: Poetic Interlude Cycler (Slower Version) -->
+    <!-- Poetic Interlude Cycler -->
     <script>
         const stanzas = document.querySelectorAll('.poem-stanza');
         let currentStanza = 0;
@@ -498,7 +499,7 @@
             currentStanza = nextStanza;
         }
 
-        // Change the poem stanza every 8.5 seconds (gives ~5.5s to read, ~3s to fade)
+
         if(stanzas.length > 0) {
             setInterval(cyclePoem, 8500);
         }

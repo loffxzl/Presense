@@ -23,6 +23,7 @@ const userSchema = new mongoose.Schema({
   isEmailVerified: { type: Boolean, default: false },
   emailVerificationToken: { type: String },
   emailVerificationExpiry: { type: Date },
+  refreshToken: { type: String },
   addresses: [addressSchema]
 }, { timestamps: true });
 

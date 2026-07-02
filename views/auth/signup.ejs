@@ -4,10 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Account | Presense</title>
-
-    <!-- ✅ CSP-safe: cdnjs Tailwind v2 -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
-
+    <link rel="stylesheet" href="/css/style.css">
     <style>
         :root {
             --cream:    #FDFBF7;
@@ -15,43 +12,82 @@
             --charcoal: #1A1A1A;
         }
         .bg-scentCream    { background-color: var(--cream); }
-        .bg-scentAmber    { background-color: var(--amber); }
         .bg-scentCharcoal { background-color: var(--charcoal); }
-        .text-scentAmber    { color: var(--amber); }
-        .text-scentCharcoal { color: var(--charcoal); }
+        .text-scentAmber  { color: var(--amber); }
         .hover\:bg-scentAmber:hover { background-color: var(--amber); }
-        .focus\:border-scentAmber:focus { border-color: var(--amber); }
         .font-serif { font-family: Georgia, Cambria, "Times New Roman", Times, serif; }
+
+        .input-error { border-color: #ef4444 !important; }
+        .input-success { border-color: #22c55e !important; }
+
+        .strength-bar {
+            height: 4px;
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
     </style>
 </head>
 <body class="bg-scentCream min-h-screen flex items-center justify-center p-6">
 
     <div class="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
         <div class="text-center mb-8">
-            <a href="/" class="text-3xl font-serif font-bold text-scentCharcoal tracking-widest uppercase">Presense</a>
+            <a href="/" class="text-3xl font-serif font-bold text-gray-900 tracking-widest uppercase">Presense</a>
             <p class="text-gray-500 text-sm mt-2">Begin your olfactory journey.</p>
         </div>
 
-        <form action="/signup" method="POST" class="space-y-4">
+        <% if (error) { %>
+            <div class="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-lg mb-4">
+                <%= error %>
+            </div>
+        <% } %>
+
+        <form action="/auth/signup" method="POST" class="space-y-4" id="signupForm" novalidate>
+
+            <!-- Full Name -->
             <div>
                 <label class="block text-xs font-semibold text-gray-600 uppercase mb-2">Full Name</label>
-                <input type="text" name="fullname" required
-                       class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-scentAmber transition">
+                <input type="text" name="fullname" id="fullname" required
+                       class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none transition"
+                       placeholder="John Doe">
+                <p class="text-red-500 text-xs mt-1 hidden" id="fullname-error"></p>
             </div>
+
+            <!-- Email -->
             <div>
                 <label class="block text-xs font-semibold text-gray-600 uppercase mb-2">Email Address</label>
-                <input type="email" name="email" required
-                       class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-scentAmber transition">
+                <input type="email" name="email" id="email" required
+                       class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none transition"
+                       placeholder="you@example.com">
+                <p class="text-red-500 text-xs mt-1 hidden" id="email-error"></p>
             </div>
+
+            <!-- Password -->
             <div>
                 <label class="block text-xs font-semibold text-gray-600 uppercase mb-2">Password</label>
-                <input type="password" name="password" required
-                       class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-scentAmber transition">
+                <input type="password" name="password" id="password" required
+                       class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none transition"
+                       placeholder="Min 8 characters">
+                <p class="text-red-500 text-xs mt-1 hidden" id="password-error"></p>
+
+                <!-- Password strength bar -->
+                <div class="mt-2 space-y-1">
+                    <div class="flex gap-1">
+                        <div class="strength-bar flex-1 bg-gray-200" id="bar1"></div>
+                        <div class="strength-bar flex-1 bg-gray-200" id="bar2"></div>
+                        <div class="strength-bar flex-1 bg-gray-200" id="bar3"></div>
+                        <div class="strength-bar flex-1 bg-gray-200" id="bar4"></div>
+                    </div>
+                    <p class="text-xs text-gray-400" id="strength-text"></p>
+                </div>
             </div>
+
+            <!-- Confirm Password -->
             <div>
                 <label class="block text-xs font-semibold text-gray-600 uppercase mb-2">Confirm Password</label>
-                <input type="password" name="confirmPassword" required
-                       class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-scentAmber transition">
+                <input type="password" name="confirmPassword" id="confirmPassword" required
+                       class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none transition"
+                       placeholder="Repeat password">
+                <p class="text-red-500 text-xs mt-1 hidden" id="confirm-error"></p>
             </div>
 
             <button type="submit"
@@ -78,8 +114,125 @@
         </a>
 
         <p class="text-center text-sm text-gray-500 mt-8">
-            Already have an account? <a href="/login" class="text-scentAmber font-semibold hover:underline">Log in</a>
+            Already have an account? <a href="/auth/login" class="text-scentAmber font-semibold hover:underline">Log in</a>
         </p>
     </div>
+
+    <script>
+        const form = document.getElementById('signupForm');
+        const fullname = document.getElementById('fullname');
+        const email = document.getElementById('email');
+        const password = document.getElementById('password');
+        const confirmPassword = document.getElementById('confirmPassword');
+
+        // Helper functions
+        const showError = (id, msg) => {
+            const el = document.getElementById(id);
+            el.textContent = msg;
+            el.classList.remove('hidden');
+        };
+
+        const clearError = (id) => {
+            const el = document.getElementById(id);
+            el.textContent = '';
+            el.classList.add('hidden');
+        };
+
+        const setInputState = (input, isValid) => {
+            input.classList.remove('input-error', 'input-success');
+            input.classList.add(isValid ? 'input-success' : 'input-error');
+        };
+
+        // Password strength checker
+        password.addEventListener('input', () => {
+            const val = password.value;
+            const bars = [document.getElementById('bar1'), document.getElementById('bar2'), document.getElementById('bar3'), document.getElementById('bar4')];
+            const strengthText = document.getElementById('strength-text');
+
+            let strength = 0;
+            if (val.length >= 8) strength++;
+            if (/[A-Z]/.test(val)) strength++;
+            if (/[0-9]/.test(val)) strength++;
+            if (/[^A-Za-z0-9]/.test(val)) strength++;
+
+            const colors = ['#ef4444', '#f97316', '#eab308', '#22c55e'];
+            const labels = ['Weak', 'Fair', 'Good', 'Strong'];
+
+            bars.forEach((bar, i) => {
+                bar.style.backgroundColor = i < strength ? colors[strength - 1] : '#e5e7eb';
+            });
+
+            strengthText.textContent = val.length > 0 ? labels[strength - 1] || '' : '';
+            strengthText.style.color = strength > 0 ? colors[strength - 1] : '#9ca3af';
+        });
+
+        // Real-time confirm password check
+        confirmPassword.addEventListener('input', () => {
+            if (confirmPassword.value && confirmPassword.value !== password.value) {
+                showError('confirm-error', 'Passwords do not match');
+                setInputState(confirmPassword, false);
+            } else if (confirmPassword.value) {
+                clearError('confirm-error');
+                setInputState(confirmPassword, true);
+            }
+        });
+
+        // Real-time email validation
+        email.addEventListener('blur', () => {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email.value)) {
+                showError('email-error', 'Please enter a valid email');
+                setInputState(email, false);
+            } else {
+                clearError('email-error');
+                setInputState(email, true);
+            }
+        });
+
+        // Real-time name validation
+        fullname.addEventListener('blur', () => {
+            if (fullname.value.trim().length < 2) {
+                showError('fullname-error', 'Name must be at least 2 characters');
+                setInputState(fullname, false);
+            } else {
+                clearError('fullname-error');
+                setInputState(fullname, true);
+            }
+        });
+
+        // Form submit validation
+        form.addEventListener('submit', (e) => {
+            let valid = true;
+
+            if (fullname.value.trim().length < 2) {
+                showError('fullname-error', 'Name must be at least 2 characters');
+                setInputState(fullname, false);
+                valid = false;
+            }
+
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email.value)) {
+                showError('email-error', 'Please enter a valid email');
+                setInputState(email, false);
+                valid = false;
+            }
+
+            if (password.value.length < 8) {
+                showError('password-error', 'Password must be at least 8 characters');
+                setInputState(password, false);
+                valid = false;
+            }
+
+
+            if (confirmPassword.value !== password.value) {
+                showError('confirm-error', 'Passwords do not match');
+                setInputState(confirmPassword, false);
+                valid = false;
+            }
+
+            if (!valid) e.preventDefault();
+        });
+    </script>
+
 </body>
 </html>
