@@ -94,8 +94,7 @@
         <div class="max-w-6xl mx-auto flex justify-between items-center">
             <a href="/" class="text-2xl font-serif font-bold tracking-widest uppercase text-scentCharcoal">Presense</a>
             <div class="flex items-center gap-6">
-                <a href="/home" class="text-sm text-gray-600 hover:text-scentAmber transition">Home</a>
-                <a href="/auth/logout" class="text-sm text-gray-600 hover:text-red-500 transition">Logout</a>
+
             </div>
         </div>
     </nav>
@@ -209,7 +208,7 @@
                 <!-- Edit Profile Panel (hidden by default) -->
                 <div id="editPanel">
                     <div class="border-t border-gray-100 pt-6">
-                        <form action="/profile/update" method="POST" id="profileForm" novalidate>
+                        <form action="/profile/update?_method=PATCH" method="POST" id="profileForm" novalidate>
                             <div class="grid sm:grid-cols-2 gap-5">
                                 <div>
                                     <label class="block text-xs font-semibold text-gray-600 uppercase mb-2">Full Name</label>
@@ -261,7 +260,7 @@
                 </div>
                 <div class="settings-panel" id="panel-password">
                     <div class="settings-panel-inner">
-                        <form action="/profile/change-password" method="POST" id="passwordForm" novalidate>
+                       <form action="/profile/change-password?_method=PATCH" method="POST" id="passwordForm" novalidate>
                             <div class="space-y-5">
 
                                 <div>
