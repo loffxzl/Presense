@@ -33,7 +33,7 @@ export const updateUserStatus = async (id, status) => {
 };
 
 export const findUserByResetToken = async (token) => {
-  return User.findOne({emailVerificationToken:token});
+  return User.findOne({ emailVerificationToken: token });
 };
 
 export const addAddress = async (userId, address) => {
@@ -65,15 +65,20 @@ export const deleteAddress = async (userId, addressId) => {
 };
 
 export const setDefaultAddress = async (userId, addressId) => {
-  // First unset all defaults
-  await User.updateOne(
+
+  const user = await User.findById(userId);
+  if (!user) return null;
+
+  user.addresses.forEach(addr => {
+    addr.isDefault = addr._id.toString() === addressId.toString();
+  });
+
+  return user.save();
+};
+
+export const unsetAllDefaults = async (userId) => {
+  return User.updateOne(
     { _id: userId },
     { $set: { 'addresses.$[].isDefault': false } }
-  );
-  // Then set the selected one
-  return User.findOneAndUpdate(
-    { _id: userId, 'addresses._id': addressId },
-    { $set: { 'addresses.$.isDefault': true } },
-    { new: true }
   );
 };

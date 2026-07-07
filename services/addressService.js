@@ -22,17 +22,44 @@ export const getAddresses = async (userId) => {
 export const addAddress = async (userId, data) => {
   const parsed = addressSchema.safeParse(data);
   if (!parsed.success) throw new Error(parsed.error.issues[0].message);
-  return userRepository.addAddress(userId, parsed.data);
+
+  const user = await userRepository.findUserById(userId);
+  const addressData = { ...parsed.data };
+
+  if (!user.addresses || user.addresses.length === 0) {
+    addressData.isDefault = true;
+  }
+
+  return userRepository.addAddress(userId, addressData);
 };
 
 export const updateAddress = async (userId, addressId, data) => {
   const parsed = addressSchema.safeParse(data);
   if (!parsed.success) throw new Error(parsed.error.issues[0].message);
+
+  // If setting as default, unset all others first via repository
+  if (parsed.data.isDefault) {
+    await userRepository.unsetAllDefaults(userId);
+  }
+
   return userRepository.updateAddress(userId, addressId, parsed.data);
 };
 
 export const deleteAddress = async (userId, addressId) => {
-  return userRepository.deleteAddress(userId, addressId);
+  const user = await userRepository.findUserById(userId);
+  if (!user) throw new Error('User not found');
+
+  const address = user.addresses.find(a => a._id.toString() === addressId.toString());
+  if (!address) throw new Error('Address not found');
+
+  const wasDefault = address.isDefault;
+  const updatedUser = await userRepository.deleteAddress(userId, addressId);
+
+  if (wasDefault && updatedUser.addresses.length > 0) {
+    await userRepository.setDefaultAddress(userId, updatedUser.addresses[0]._id);
+  }
+
+  return updatedUser;
 };
 
 export const setDefaultAddress = async (userId, addressId) => {
