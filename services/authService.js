@@ -31,7 +31,7 @@ export const signupUser = async (data) => {
 
   const passwordHash = await bcrypt.hash(password, 10);
   const otp = generateOTP();
-  const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+  const otpExpiry = new Date(Date.now() + 1 * 60 * 1000);
 
   const user = await userRepository.createUser({
     name: fullname,
@@ -50,6 +50,8 @@ export const signupUser = async (data) => {
 
 export const verifyOTP = async (email, otp) => {
   const user = await userRepository.findUserByEmail(email);
+
+
   if (!user) throw new Error('User not found');
   if (user.emailVerificationToken !== otp) throw new Error('Invalid OTP');
   if (user.emailVerificationExpiry < new Date()) throw new Error('OTP expired. Please resend.');
