@@ -43,3 +43,7 @@ export const changePassword = async (id, data) => {
     const passwordHash = await bcrypt.hash(newPassword,10);
     await userRespository.updateUserById(id, {passwordHash});
 };
+
+export const updateAvatar = async (id, avatarUrl) => {
+  return userRespository.updateUserById(id, { avatarUrl });
+};
