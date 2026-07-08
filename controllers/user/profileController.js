@@ -1,18 +1,21 @@
 import { success } from 'zod';
 import * as profileService from '../../services/profileService.js';
 
-export const getProfilePage = async (req,res) => {
-    try{
-        res.render('user/profile', {
-            title: 'My Profile',
-            user: req.user,
-            error:null,
-            success:null
-        })
-    }catch(err){
-        console.error('getProfile error: ',err.message);
-        res.status(500).send('Server error');
-    }
+import * as userRepository from '../../repositories/userRepository.js';
+
+export const getProfilePage = async (req, res) => {
+  try {
+    const user = await userRepository.findUserById(req.user._id);
+    res.render('user/profile', {
+      title: 'My Profile',
+      user,
+      error: null,
+      success: null
+    });
+  } catch (err) {
+    console.error('getProfilePage error:', err.message);
+    res.status(500).send('Server error');
+  }
 };
 
 export const updateProfile = async (req,res) => {

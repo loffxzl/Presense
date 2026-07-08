@@ -2,6 +2,8 @@ import express from 'express';
 import { isUserAuthenticated, attachUser } from '../middlewares/auth.js';
 import * as profileController from '../controllers/user/profileController.js';
 import * as addressController from '../controllers/user/addressController.js';
+import * as emailController from '../controllers/user/emailController.js';
+
 
 const router = express.Router();
 
@@ -27,5 +29,10 @@ router.post('/profile/addresses', isUserAuthenticated, addressController.addAddr
 router.put('/profile/addresses/:id', isUserAuthenticated, addressController.updateAddress);
 router.delete('/profile/addresses/:id', isUserAuthenticated, addressController.deleteAddress);
 router.patch('/profile/addresses/:id/default', isUserAuthenticated, addressController.setDefaultAddress);
+
+router.get('/profile/change-email', isUserAuthenticated, emailController.getChangeEmailPage);
+router.post('/profile/change-email', isUserAuthenticated, emailController.postChangeEmail);
+router.get('/profile/verify-email-change', isUserAuthenticated, emailController.getVerifyEmailChangePage);
+router.post('/profile/verify-email-change', isUserAuthenticated, emailController.postVerifyEmailChange);
 
 export default router;

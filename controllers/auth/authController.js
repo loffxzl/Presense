@@ -10,9 +10,10 @@ const cookieOptions = (maxAge) => ({
 });
 
 export const getLoginPage = (req, res) => {
-  if (req.session.admin) return res.redirect('/admin/users');
+  if (req.session?.admin) return res.redirect('/admin/users');  
   if (req.cookies.accessToken) return res.redirect('/home');
-  res.render('auth/login', { title: 'Login', error: null });
+  const error = req.query.blocked ? 'Your account has been blocked.' : null;
+  res.render('auth/login', { title: 'Login', error });
 };
 
 export const postLogin = async (req, res) => {
@@ -89,11 +90,26 @@ export const resendOTP = async (req, res) => {
   }
 };
 
+
+const clearCookieOptions = () => ({
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+});
+
 export const logout = (req, res) => {
-  res.clearCookie('accessToken');
-  res.clearCookie('refreshToken');
+  const opts = clearCookieOptions();
+  res.clearCookie('accessToken', opts);
+  res.clearCookie('refreshToken', opts);
   req.session.destroy((err) => {
     if (err) console.error('Logout error:', err.message);
+    res.redirect('/auth/login');
+  });
+};
+
+export const adminLogout = (req, res) => {
+  req.session.destroy((err) => {
+    if (err) console.error('Admin logout error:', err.message);
+    res.clearCookie('connect.sid'); 
     res.redirect('/auth/login');
   });
 };

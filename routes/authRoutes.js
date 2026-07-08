@@ -12,8 +12,10 @@ router.get('/verify-otp', authController.getVerifyOTPPage);
 router.post('/verify-otp', authController.postVerifyOTP);
 router.post('/resend-otp', authController.resendOTP);
 router.get('/logout', authController.logout);
+router.get('/admin/logout', authController.adminLogout);
 
-// Google OAuth
+
+
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 router.get('/google/callback',
   passport.authenticate('google', { failureRedirect: '/auth/login', session: false }),

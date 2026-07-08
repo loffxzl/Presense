@@ -15,6 +15,8 @@ import passport, { initPassport } from './config/passport.js';
 import authRoutes from './routes/authRoutes.js';
 import adminUserRoutes from './routes/admin/userRoutes.js';
 import userRoutes from './routes/userRoutes.js';
+import { adminLogout } from './controllers/auth/authController.js';
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -54,5 +56,7 @@ app.use('/auth', authRoutes);
 app.use('/admin/users', adminUserRoutes);
 app.use('/', userRoutes);
 
+app.get('/admin/logout', adminLogout);
+
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}/`));
+app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}/`)); 

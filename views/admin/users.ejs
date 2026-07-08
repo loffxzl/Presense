@@ -48,7 +48,7 @@
                     <p class="text-xs text-gray-500">Admin</p>
                 </div>
             </div>
-            <a href="/auth/logout" class="text-gray-500 text-sm flex items-center gap-2 hover:text-red-600">
+            <a href="/admin/logout" class="text-gray-500 text-sm flex items-center gap-2 hover:text-red-600">
                 <span>⎋</span> Sign Out
             </a>
         </div>
@@ -189,6 +189,13 @@
     </div>
 
     <script>
+        
+          window.addEventListener('pageshow', function (event) {
+            if (event.persisted) {
+                window.location.reload();
+            }
+        });
+
         function openModal(userId, userName, currentStatus) {
             const isBlocking = currentStatus === 'active';
 
