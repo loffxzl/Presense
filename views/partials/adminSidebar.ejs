@@ -1,0 +1,31 @@
+<!-- views/partials/adminSidebar.ejs -->
+<aside class="w-64 bg-white border-r border-gray-200 flex flex-col justify-between p-4">
+    <div>
+        <div class="flex items-center gap-2 mb-8 p-2">
+            <h1 class="font-serif font-bold text-xl tracking-widest uppercase">Presense</h1>
+        </div>
+        <nav class="space-y-2">
+            <a href="#" class="block p-3 rounded-lg text-gray-600 hover:bg-gray-100">Dashboard</a>
+            <a href="#" class="block p-3 rounded-lg text-gray-600 hover:bg-gray-100">Products</a>
+            <a href="#" class="block p-3 rounded-lg text-gray-600 hover:bg-gray-100">Orders</a>
+            <a href="/admin/users" class="block p-3 rounded-lg <%= activePage === 'users' ? 'bg-gray-900 text-white font-medium' : 'text-gray-600 hover:bg-gray-100' %>">Customers</a>
+            <a href="#" class="block p-3 rounded-lg text-gray-600 hover:bg-gray-100">Sales Report</a>
+            <a href="#" class="block p-3 rounded-lg text-gray-600 hover:bg-gray-100">Coupon</a>
+            <a href="/admin/category" class="block p-3 rounded-lg <%= activePage === 'category' ? 'bg-gray-900 text-white font-medium' : 'text-gray-600 hover:bg-gray-100' %>">Category</a>
+        </nav>
+    </div>
+    <div class="border-t pt-4">
+        <div class="flex items-center gap-3 mb-4 p-2">
+            <div class="bg-gray-200 rounded-full w-10 h-10 flex items-center justify-center font-bold text-sm">
+                <%= adminName.charAt(0).toUpperCase() %>
+            </div>
+            <div>
+                <p class="font-bold text-sm"><%= adminName %></p>
+                <p class="text-xs text-gray-500">Admin</p>
+            </div>
+        </div>
+        <a href="/admin/logout" class="text-gray-500 text-sm flex items-center gap-2 hover:text-red-600">
+            <span>⎋</span> Sign Out
+        </a>
+    </div>
+</aside>

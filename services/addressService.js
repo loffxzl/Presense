@@ -1,5 +1,6 @@
 import * as userRepository from '../repositories/userRepository.js';
 import { z } from 'zod';
+import  AppError  from '../utils/AppError.js';
 
 const addressSchema = z.object({
   fullName: z.string().trim().min(2, 'Full name is required'),
@@ -15,7 +16,7 @@ const addressSchema = z.object({
 
 export const getAddresses = async (userId) => {
   const user = await userRepository.findUserById(userId);
-  if (!user) throw new Error('User not found');
+  if (!user) throw new AppError('User not found',402);
   return user.addresses;
 };
 

@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> | Presense Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .font-serif { font-family: Georgia, Cambria, "Times New Roman", Times, serif; }
+        .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:100; display:none; align-items:center; justify-content:center; padding:16px; }
+        .modal-overlay.show { display:flex; }
+        .modal-box { background:#fff; border-radius:16px; padding:32px; width:100%; max-width:480px; max-height:90vh; overflow-y:auto; }
+    </style>
+</head>
+<body class="bg-gray-50 flex min-h-screen">
+
+    <!-- Sidebar -->
+        <%- include('../partials/adminSidebar', { adminName, activePage: 'category' }) %>
+
+    <!-- Main Content -->
+    <main class="flex-1 ml-64 p-8">
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h2 class="text-2xl font-bold">Category Management</h2>
+                <p class="text-gray-400 text-sm mt-1">Total: <%= totalCategories %> categories</p>
+            </div>
+            <button onclick="openModal('add')"
+                    class="bg-gray-900 text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-yellow-600 transition">
+                + Add Category
+            </button>
+        </div>
+
+        <!-- Alerts -->
+        <% const successMsg = typeof success !== 'undefined' ? success : null; %>
+        <% const errorMsg = typeof error !== 'undefined' ? error : null; %>
+        <% if (successMsg) { %>
+            <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6 text-sm">
+                ✓ <%= successMsg %>
+            </div>
+        <% } %>
+        <% if (errorMsg) { %>
+            <div class="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-6 text-sm">
+                <%= errorMsg %>
+            </div>
+        <% } %>
+
+        <!-- Search -->
+        <form action="/admin/category" method="GET" class="flex gap-3 mb-6">
+            <input type="text" name="search" value="<%= search %>"
+                   placeholder="Search categories..."
+                   class="border p-2 rounded-lg flex-1 text-sm focus:outline-none focus:border-gray-400"/>
+            <button type="submit" class="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-700 transition">
+                Search
+            </button>
+            <% if (search) { %>
+                <a href="/admin/category" class="border px-4 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition">
+                    Clear
+                </a>
+            <% } %>
+        </form>
+
+        <!-- Grid -->
+        <% if (categories.length === 0) { %>
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm py-16 text-center text-gray-400 text-sm">
+                No categories found
+            </div>
+        <% } else { %>
+            <div class="grid gap-5" style="grid-template-columns: repeat(auto-fill, minmax(260px, 280px));">
+                <% categories.forEach((category) => { %>
+                    <div class="bg-white rounded-lg border border-gray-200 overflow-hidden hover:border-gray-300 hover:shadow-sm transition">
+                        <!-- Thumbnail -->
+                        <div class="relative aspect-video bg-gray-100">
+                            <% if (category.imageUrl) { %>
+                                <img src="<%= category.imageUrl %>" alt="<%= category.name %>"
+                                     class="w-full h-full object-cover">
+                            <% } else { %>
+                                <div class="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+                                    No image
+                                </div>
+                            <% } %>
+                        </div>
+
+                        <!-- Details -->
+                        <div class="p-4 border-t border-gray-100">
+                            <div class="flex items-start justify-between gap-2">
+                                <h3 class="font-medium text-gray-900 text-sm truncate"><%= category.name %></h3>
+                                <span class="shrink-0 mt-0.5 flex items-center gap-1.5 text-[11px] font-medium text-gray-500">
+                                    <span class="w-1.5 h-1.5 rounded-full <%= category.status === 'active' ? 'bg-green-500' : 'bg-red-400' %>"></span>
+                                    <%= category.status %>
+                                </span>
+                            </div>
+                            <p class="text-gray-400 text-xs mt-0.5 truncate"><%= category.slug %></p>
+
+                            <div class="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 text-xs text-gray-500">
+                                <span><%= category.itemCount || 0 %> items</span>
+                                <span><%= new Date(category.createdAt).toLocaleDateString('en-IN') %></span>
+                            </div>
+
+                            <div class="flex gap-2 mt-3">
+                                <button onclick="openModal('edit', <%= JSON.stringify(category) %>)"
+                                        class="flex-1 text-xs font-medium px-3 py-1.5 rounded-md border border-gray-200 text-gray-700 hover:bg-gray-50 transition">
+                                    Edit
+                                </button>
+                                <form action="/admin/category/<%= category._id %>?_method=DELETE" method="POST"
+                                      onsubmit="return confirm('Delete <%= category.name %>?')" class="flex-1">
+                                    <button type="submit"
+                                            class="w-full text-xs font-medium px-3 py-1.5 rounded-md border border-gray-200 text-red-600 hover:bg-red-50 hover:border-red-200 transition">
+                                        Delete
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                <% }) %>
+            </div>
+        <% } %>
+
+        <!-- Pagination -->
+        <% if (totalPages > 1) { %>
+            <div class="flex items-center gap-2 mt-6">
+                <% if (currentPage > 1) { %>
+                    <a href="/admin/category?page=<%= currentPage - 1 %>&search=<%= search %>"
+                       class="px-3 py-1 rounded bg-gray-200 text-gray-700 text-sm hover:bg-gray-300 transition">&lt;</a>
+                <% } %>
+                <% for (let i = 1; i <= totalPages; i++) { %>
+                    <a href="/admin/category?page=<%= i %>&search=<%= search %>"
+                       class="px-3 py-1 rounded text-sm transition
+                           <%= i === currentPage ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300' %>">
+                        <%= i %>
+                    </a>
+                <% } %>
+                <% if (currentPage < totalPages) { %>
+                    <a href="/admin/category?page=<%= currentPage + 1 %>&search=<%= search %>"
+                       class="px-3 py-1 rounded bg-gray-200 text-gray-700 text-sm hover:bg-gray-300 transition">&gt;</a>
+                <% } %>
+            </div>
+        <% } %>
+        <p class="text-xs text-gray-400 mt-3">Total: <%= totalCategories %> categories</p>
+    </main>
+
+    <!-- Add/Edit Modal -->
+    <div id="categoryModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="font-serif text-xl font-bold text-gray-900" id="modalTitle">Add Category</h2>
+                <button onclick="closeModal()" type="button" class="text-gray-400 hover:text-gray-600">✕</button>
+            </div>
+
+            <form id="categoryForm" method="POST" enctype="multipart/form-data" novalidate>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-2">Name</label>
+                        <input type="text" name="name" id="f-name" required
+                               class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none text-sm">
+                        <p class="text-red-500 text-xs mt-1 hidden" id="e-name"></p>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-2">Description</label>
+                        <textarea name="description" id="f-description" rows="3" maxlength="500"
+                                  class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none text-sm resize-none"></textarea>
+                        <p class="text-red-500 text-xs mt-1 hidden" id="e-description"></p>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-2">Category Image</label>
+                        <input type="file" name="image" id="f-image" accept="image/jpeg,image/png,image/webp"
+                               class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gray-900 file:text-white hover:file:bg-gray-700">
+                        <p class="text-gray-400 text-xs mt-1">JPG, PNG or WebP. Max 5MB.</p>
+                        <p class="text-red-500 text-xs mt-1 hidden" id="e-image"></p>
+                        <div id="imagePreview" class="mt-2 hidden">
+                            <img id="previewImg" src="" alt="Preview" class="w-20 h-20 rounded-lg object-cover">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-2">Status</label>
+                        <select name="status" id="f-status"
+                                class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none text-sm">
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex gap-3 mt-6">
+                    <button type="submit"
+                            class="flex-1 bg-gray-900 text-white py-3 rounded-lg text-sm font-semibold hover:bg-yellow-600 transition">
+                        Save
+                    </button>
+                    <button type="button" onclick="closeModal()"
+                            class="px-6 py-3 rounded-lg text-sm font-semibold border border-gray-200 text-gray-500 hover:bg-gray-50 transition">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        
+        function openModal(mode, category = null) {
+            const form = document.getElementById('categoryForm');
+            const title = document.getElementById('modalTitle');
+            form.reset();
+            form.enctype = 'multipart/form-data';
+            document.getElementById('imagePreview').classList.add('hidden');
+
+            if (mode === 'add') {
+                title.textContent = 'Add Category';
+                form.action = '/admin/category';
+                form.method = 'POST';
+            } else if (mode === 'edit' && category) {
+                title.textContent = 'Edit Category';
+                form.action = `/admin/category/${category._id}?_method=PATCH`;
+                form.method = 'POST';
+                document.getElementById('f-name').value = category.name || '';
+                document.getElementById('f-description').value = category.description || '';
+                document.getElementById('f-status').value = category.status || 'active';
+
+                if (category.imageUrl) {
+                    document.getElementById('previewImg').src = category.imageUrl;
+                    document.getElementById('imagePreview').classList.remove('hidden');
+                }
+            }
+
+            document.getElementById('categoryModal').classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            document.getElementById('categoryModal').classList.remove('show');
+            document.body.style.overflow = '';
+        }
+
+        // Close on backdrop click
+        document.getElementById('categoryModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+
+        // --- Validation setup ---
+        const nameInput = document.getElementById('f-name');
+        const descriptionInput = document.getElementById('f-description');
+        const imageInput = document.getElementById('f-image');
+
+        const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+        const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB, matches multer limit
+        const MAX_DESCRIPTION_LENGTH = 500;
+
+        const showFieldError = (id, msg) => {
+            const el = document.getElementById(id);
+            el.textContent = msg;
+            el.classList.remove('hidden');
+        };
+
+        const clearFieldError = (id) => {
+            const el = document.getElementById(id);
+            el.textContent = '';
+            el.classList.add('hidden');
+        };
+
+        const validateName = () => {
+            const value = nameInput.value.trim();
+            if (value.length < 2) {
+                showFieldError('e-name', 'Name must be at least 2 characters');
+                nameInput.style.borderColor = '#ef4444';
+                return false;
+            }
+            if (value.length > 50) {
+                showFieldError('e-name', 'Name must be under 50 characters');
+                nameInput.style.borderColor = '#ef4444';
+                return false;
+            }
+            clearFieldError('e-name');
+            nameInput.style.borderColor = '';
+            return true;
+        };
+
+        const validateDescription = () => {
+            if (descriptionInput.value.length > MAX_DESCRIPTION_LENGTH) {
+                showFieldError('e-description', `Description must be under ${MAX_DESCRIPTION_LENGTH} characters`);
+                descriptionInput.style.borderColor = '#ef4444';
+                return false;
+            }
+            clearFieldError('e-description');
+            descriptionInput.style.borderColor = '';
+            return true;
+        };
+
+        const validateImage = () => {
+            const file = imageInput.files[0];
+            if (!file) {
+                clearFieldError('e-image');
+                return true; // image is optional
+            }
+            if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+                showFieldError('e-image', 'Only JPG, PNG and WebP images are allowed');
+                imageInput.value = '';
+                document.getElementById('imagePreview').classList.add('hidden');
+                return false;
+            }
+            if (file.size > MAX_IMAGE_SIZE) {
+                showFieldError('e-image', 'Image must be smaller than 5MB');
+                imageInput.value = '';
+                document.getElementById('imagePreview').classList.add('hidden');
+                return false;
+            }
+            clearFieldError('e-image');
+            return true;
+        };
+
+        nameInput.addEventListener('blur', validateName);
+        nameInput.addEventListener('input', () => clearFieldError('e-name'));
+        descriptionInput.addEventListener('input', validateDescription);
+
+        // Image preview + validation
+        imageInput.addEventListener('change', function() {
+            if (!validateImage()) return;
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    document.getElementById('previewImg').src = e.target.result;
+                    document.getElementById('imagePreview').classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Form submit validation
+        document.getElementById('categoryForm').addEventListener('submit', (e) => {
+            const isNameValid = validateName();
+            const isDescriptionValid = validateDescription();
+            const isImageValid = validateImage();
+
+            if (!isNameValid || !isDescriptionValid || !isImageValid) {
+                e.preventDefault();
+            }
+        });
+    </script>
+
+</body>
+</html>

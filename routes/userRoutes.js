@@ -3,7 +3,7 @@ import { isUserAuthenticated, attachUser } from '../middlewares/auth.js';
 import * as profileController from '../controllers/user/profileController.js';
 import * as addressController from '../controllers/user/addressController.js';
 import * as emailController from '../controllers/user/emailController.js';
-import upload from '../config/multer.js';
+import { uploadAvatar } from '../config/multer.js';
 
 const router = express.Router();
 
@@ -35,6 +35,6 @@ router.post('/profile/change-email', isUserAuthenticated, emailController.postCh
 router.get('/profile/verify-email-change', isUserAuthenticated, emailController.getVerifyEmailChangePage);
 router.post('/profile/verify-email-change', isUserAuthenticated, emailController.postVerifyEmailChange);
 
-router.patch('/profile/avatar', isUserAuthenticated, upload.single('avatar'), profileController.updateAvatar);
+router.patch('/profile/avatar', isUserAuthenticated, uploadAvatar.single('avatar'), profileController.updateAvatar);
 
 export default router;

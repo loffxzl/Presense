@@ -27,4 +27,4 @@ export const toggleUserStatus = async (id) => {
 
   const newStatus = user.status === 'active' ? 'blocked' : 'active';
   return userRepository.updateUserStatus(id, newStatus);
-};
+}; 
