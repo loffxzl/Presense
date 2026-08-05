@@ -41,10 +41,15 @@ export const addCategoryService = async (data, imageUrl = null) => {
 
     const { name, description, status } = parsed.data;
 
+    const DuplicateCategory = await categorieRepository.findCategoryByOne({ name: name, isDeleted: {$ne: true}});
+    console.log(DuplicateCategory)
+
+    if(DuplicateCategory) throw new AppError('name already exists', 409);
+
     const slug = generateSlug(name);
 
     return  categorieRepository.addCategory({ name, description, status: status || 'active', slug, imageUrl});
-}
+};
 
 export const editCategory = async (categoryId, data, imageUrl = null) => {
     const parsed = categorySchema.safeParse(data);

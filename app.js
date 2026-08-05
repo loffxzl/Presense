@@ -13,14 +13,15 @@ import passport, { initPassport } from './config/passport.js';
 import authRoutes from './routes/authRoutes.js';
 import adminUserRoutes from './routes/admin/userRoutes.js';
 import adminCategoryRoutes from './routes/admin/categoryRoutes.js';
+import adminProductRoutes from './routes/admin/productRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import { adminLogout } from './controllers/auth/authController.js';
 import compression from 'compression';
 import morgan from 'morgan';
-import { logger } from './utils/logger.js';
+import logger  from './utils/logger.js';
 import fs from 'fs';
 import { errorHandler, notFound } from './middlewares/errorHandler.js';
-
+import flash from 'connect-flash';
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -58,6 +59,8 @@ app.use(session({
   cookie: { maxAge: 1000 * 60 * 60 * 24 }
 }));
 
+app.use(flash());
+
 app.use((req, res, next) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   next();
@@ -69,6 +72,7 @@ app.use(attachUser);
 app.use('/auth', authRoutes);
 app.use('/admin/users', adminUserRoutes);
 app.use('/admin/category', adminCategoryRoutes);
+app.use('/admin/products', adminProductRoutes);
 app.use('/', userRoutes);
 
 

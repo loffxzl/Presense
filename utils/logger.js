@@ -1,6 +1,6 @@
 import winston from "winston";
 
-export const logger = winston.createLogger({
+ const logger = winston.createLogger({
     level: 'info',
     format: winston.format.combine(winston.format.timestamp(),winston.format.json()),
     transports: [
@@ -8,3 +8,5 @@ export const logger = winston.createLogger({
         new winston.transports.File({ filename: 'error.log', level: 'error'})
     ]
 });
+
+export default logger;

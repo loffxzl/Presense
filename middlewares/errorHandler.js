@@ -3,9 +3,12 @@ export const errorHandler = (err, req, res, next) => {
   console.error('Stack:', err.stack);
 
   const statusCode = err.statusCode || 500;
-  const message = err.message || 'Internal Server Error';
 
-  // If it's an API request return JSON
+  const message = err.isOperational
+    ? err.message
+    : 'Something went wrong. Please try again.';
+
+  // If it's an API/XHR request, return JSON
   if (req.xhr || req.headers.accept?.includes('application/json')) {
     return res.status(statusCode).json({ success: false, message });
   }
@@ -31,5 +34,6 @@ export const errorHandler = (err, req, res, next) => {
 export const notFound = (req, res, next) => {
   const err = new Error(`Page not found: ${req.originalUrl}`);
   err.statusCode = 404;
+  err.isOperational = true; 
   next(err);
 };

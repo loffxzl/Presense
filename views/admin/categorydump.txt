@@ -199,9 +199,9 @@
     </div>
 
     <script>
-        const form = document.getElementById('categoryForm');
-
+        
         function openModal(mode, category = null) {
+            const form = document.getElementById('categoryForm');
             const title = document.getElementById('modalTitle');
             form.reset();
             form.enctype = 'multipart/form-data';
@@ -328,56 +328,14 @@
             }
         });
 
-        // Form submit — via fetch, errors shown inline without a page reload
-        let isSubmitting = false;
-        document.getElementById('categoryForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            if (isSubmitting) return; // prevent duplicate/concurrent submissions
-            isSubmitting = true;
-
+        // Form submit validation
+        document.getElementById('categoryForm').addEventListener('submit', (e) => {
             const isNameValid = validateName();
             const isDescriptionValid = validateDescription();
             const isImageValid = validateImage();
 
             if (!isNameValid || !isDescriptionValid || !isImageValid) {
-                isSubmitting = false;
-                return;
-            }
-
-            const submitBtn = form.querySelector('button[type="submit"]');
-            const originalText = submitBtn.textContent;
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Saving...';
-
-            try {
-                const formData = new FormData(form);
-                const response = await fetch(form.action, {
-                    method: form.method,
-                    body: formData,
-                    headers: { 'Accept': 'application/json' },
-                    credentials: 'same-origin'
-                });
-
-                const result = await response.json();
-
-                if (!response.ok) {
-                    showFieldError('e-name', result.message || 'Something went wrong');
-                    nameInput.style.borderColor = '#ef4444';
-                    isSubmitting = false;
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = originalText;
-                    return;
-                }
-
-                window.location.reload();
-                // no need to reset isSubmitting/button here — page is navigating away
-            } catch (err) {
-                showFieldError('e-name', 'Network error — please check your connection and try again');
-                nameInput.style.borderColor = '#ef4444';
-                isSubmitting = false;
-                submitBtn.disabled = false;
-                submitBtn.textContent = originalText;
+                e.preventDefault();
             }
         });
     </script>

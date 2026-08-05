@@ -336,33 +336,46 @@
             svg.innerHTML = isHidden ? EYE_CLOSED : EYE_OPEN;
         }
 
-        document.getElementById('profileForm').addEventListener('submit', (e) => {
-            let valid = true;
-            const name = document.getElementById('name');
-            const phone = document.getElementById('phone');
+ document.getElementById('profileForm').addEventListener('submit', (e) => {
+    let valid = true;
+    const name = document.getElementById('name');
+    const phone = document.getElementById('phone');
+    const nameValue = name.value.trim();
 
-            if (name.value.trim().length < 2) {
-                document.getElementById('name-error').textContent = 'Name must be at least 2 characters';
-                document.getElementById('name-error').classList.remove('hidden');
-                name.classList.add('input-error');
-                valid = false;
-            } else {
-                document.getElementById('name-error').classList.add('hidden');
-                name.classList.remove('input-error');
-            }
+    // Name validation
+    if (nameValue.length < 2) {
+        document.getElementById('name-error').textContent = 'Name must be at least 2 characters';
+        document.getElementById('name-error').classList.remove('hidden');
+        name.classList.add('input-error');
+        valid = false;
+    } else if (nameValue.length > 50) {
+        document.getElementById('name-error').textContent = 'Name must be under 50 characters';
+        document.getElementById('name-error').classList.remove('hidden');
+        name.classList.add('input-error');
+        valid = false;
+    } else if (!/^[A-Za-z\s'-]+$/.test(nameValue)) {
+        document.getElementById('name-error').textContent = 'Name can only contain letters, spaces, hyphens, and apostrophes';
+        document.getElementById('name-error').classList.remove('hidden');
+        name.classList.add('input-error');
+        valid = false;
+    } else {
+        document.getElementById('name-error').classList.add('hidden');
+        name.classList.remove('input-error');
+        name.value = nameValue; // strip leading/trailing whitespace before submit
+    }
 
-            if (phone.value && !/^\d{10}$/.test(phone.value)) {
-                document.getElementById('phone-error').textContent = 'Phone number must be exactly 10 digits';
-                document.getElementById('phone-error').classList.remove('hidden');
-                phone.classList.add('input-error');
-                valid = false;
-            } else {
-                document.getElementById('phone-error').classList.add('hidden');
-                phone.classList.remove('input-error');
-            }
+    if (phone.value && !/^\d{10}$/.test(phone.value)) {
+        document.getElementById('phone-error').textContent = 'Phone number must be exactly 10 digits';
+        document.getElementById('phone-error').classList.remove('hidden');
+        phone.classList.add('input-error');
+        valid = false;
+    } else {
+        document.getElementById('phone-error').classList.add('hidden');
+        phone.classList.remove('input-error');
+    }
 
-            if (!valid) e.preventDefault();
-        });
+    if (!valid) e.preventDefault();
+});
 
         document.getElementById('passwordForm')?.addEventListener('submit', (e) => {
             let valid = true;

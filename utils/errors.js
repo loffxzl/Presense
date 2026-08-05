@@ -1,5 +1,5 @@
 // utils/errors.js
-import { AppError } from './AppError.js';
+import  AppError  from './AppError.js';
 
 export class NotFoundError extends AppError {
     constructor(message = 'Resource not found'){
@@ -18,3 +18,4 @@ export class UnauthorizedError extends AppError {
         super(message, 401);
     }
 }
+

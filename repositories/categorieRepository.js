@@ -30,3 +30,7 @@ export const findCategoryById = async (categoryId) => {
 export const countCategory = async (filter)=> {
     return await Category.countDocuments(filter);
 }
+
+export const findCategoryByOne = async(filter) => {
+    return await Category.findOne(filter);
+}

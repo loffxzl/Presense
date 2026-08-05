@@ -1,6 +1,4 @@
-import mongoose, { mongo } from "mongoose";
-import { boolean, trim } from "zod";
-import { required } from "zod/mini";
+import mongoose from "mongoose";
 
 const varientSchema = new mongoose.Schema({
     size: { type: String, required: true},
@@ -23,10 +21,12 @@ const ratingSchema = new mongoose.Schema({
 
 const productSchema = new mongoose.Schema({
     name: { type: String, required: true, trim: true},
-    productCode: { type: String, required: true, unique: true, trim: true},
+    slug: { type: String, required: true, lowercase: true, trim: true},
+    productCode: { type: String, required: true, trim: true},
     description: { type: String, trim: true},
     brand: {type: String, required: true, trim: true},
     image: [{ type: String}],
+    isDeleted:{ type:Boolean , default:false },
     categoryId: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true },
     concentration: {
         type: String,
@@ -39,4 +39,8 @@ const productSchema = new mongoose.Schema({
     rating: { type: ratingSchema, default: () => ({ }) }
 }, { timestamps: true });
 
-export default mongoose.model('Product', productSchema);
+
+productSchema.index({ slug: 1 }, { unique: true, partialFilterExpression: { isDeleted: { $ne: true } } });
+productSchema.index({ productCode: 1 }, { unique: true, partialFilterExpression: { isDeleted: { $ne: true } } });
+
+export default mongoose.model('Product', productSchema); 
