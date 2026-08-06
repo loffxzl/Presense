@@ -1,6 +1,6 @@
-import * as userRepository from '../repositories/userRepository.js';
+import * as userRepository from '../../repositories/userRepository.js';
 import { z } from 'zod';
-import  AppError  from '../utils/AppError.js';
+import  AppError  from '../../utils/AppError.js';
 
 const addressSchema = z.object({
   fullName: z.string().trim().min(2, 'Full name is required'),

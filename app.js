@@ -15,6 +15,7 @@ import adminUserRoutes from './routes/admin/userRoutes.js';
 import adminCategoryRoutes from './routes/admin/categoryRoutes.js';
 import adminProductRoutes from './routes/admin/productRoutes.js';
 import userRoutes from './routes/userRoutes.js';
+import userProductListRoutes from './routes/user/productListingRouter.js'
 import { adminLogout } from './controllers/auth/authController.js';
 import compression from 'compression';
 import morgan from 'morgan';
@@ -74,6 +75,7 @@ app.use('/admin/users', adminUserRoutes);
 app.use('/admin/category', adminCategoryRoutes);
 app.use('/admin/products', adminProductRoutes);
 app.use('/', userRoutes);
+app.use('/products',userProductListRoutes);
 
 
 app.get('/admin/logout', adminLogout);

@@ -1,4 +1,4 @@
-import * as emailChangeService from '../../services/emailChangeService.js';
+import * as emailChangeService from '../../services/user/emailChangeService.js';
 
 export const getChangeEmailPage = (req, res) => {
   res.render('user/changeEmail', {

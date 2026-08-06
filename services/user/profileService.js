@@ -1,5 +1,5 @@
 import bcrypt from 'bcrypt';
-import * as userRespository from '../repositories/userRepository.js';
+import * as userRespository from '../../repositories/userRepository.js';
 import { z } from 'zod';
 
 const updateProfileSchema = z.object({

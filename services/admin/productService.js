@@ -1,8 +1,8 @@
-import * as productRepository from '../repositories/productRepository.js';
+import * as productRepository from '../../repositories/productRepository.js';
 import slugify from 'slugify';
-import { NotFoundError, ValidationError } from '../utils/errors.js';
-import { productSchema } from '../validators/productSchema.js';
-import AppError from '../utils/AppError.js';
+import { NotFoundError, ValidationError } from '../../utils/errors.js';
+import { productSchema } from '../../validators/productSchema.js';
+import AppError from '../../utils/AppError.js';
 import { customAlphabet } from 'nanoid';
 
 
@@ -90,3 +90,4 @@ export const deleteProduct = async (id) => {
 
     return await productRepository.deleteProduct(id);
 };
+

@@ -1,5 +1,5 @@
-import * as userRepository from '../repositories/userRepository.js';
-import { sendOTPEmail } from '../utils/email.js';
+import * as userRepository from '../../repositories/userRepository.js';
+import { sendOTPEmail } from '../../utils/email.js';
 import { z } from 'zod';
 
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();

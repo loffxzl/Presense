@@ -1,7 +1,7 @@
-import * as categorieRepository from "../repositories/categorieRepository.js";
+import * as categorieRepository from '../../repositories/categorieRepository.js';
 import { z } from 'zod';
 import slugify from "slugify";
-import AppError from '../utils/AppError.js';
+import AppError from '../../utils/AppError.js';
 
 const categorySchema = z.object({
   name: z.string().trim().min(2, 'Name must be at least 2 characters').max(50, 'Name too long'),

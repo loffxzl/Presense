@@ -1,4 +1,4 @@
-import * as categoryService from "../../services/categoryService.js";
+import * as categoryService from "../../services/admin/categoryService.js";
 import { catchAsync } from "../../utils/catchAsync.js";
 //import  logger  from '../../utils/logger.js';
 

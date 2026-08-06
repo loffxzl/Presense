@@ -1,6 +1,6 @@
-import * as productService from '../../services/productService.js';
+import * as productService from '../../services/admin/productService.js';
 import {catchAsync} from '../../utils/catchAsync.js';
-import { getCategoryList } from '../../services/categoryService.js';
+import { getCategoryList } from '../../services/admin/categoryService.js';
 
 export const getProduct = catchAsync(async ( req, res)=>{
     const { page = 1, search = '' } = req.query;

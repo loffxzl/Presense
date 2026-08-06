@@ -1,4 +1,4 @@
-import * as profileService from '../../services/profileService.js';
+import * as profileService from '../../services/user/profileService.js';
 import * as userRepository from '../../repositories/userRepository.js';
 
 export const getProfilePage = async (req, res) => {

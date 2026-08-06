@@ -1,4 +1,4 @@
-import * as userRepository from '../repositories/userRepository.js';
+import * as userRepository from '../../repositories/userRepository.js';
 
 export const getUserList = async ({ page = 1, limit = 10, search = '' }) => {
   const filter = {};
