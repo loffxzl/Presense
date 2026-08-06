@@ -19,3 +19,8 @@ export class UnauthorizedError extends AppError {
     }
 }
 
+export class OutOfStockError extends AppError{
+    constructor(message = 'This item is currently out of stock'){
+        super(message,409)
+    }
+}

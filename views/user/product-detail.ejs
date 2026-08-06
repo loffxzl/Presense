@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> | Presense</title>
+
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='25' fill='%231A1A1A'/><text x='50%' y='68%' font-family='Georgia, serif' font-size='55' font-weight='bold' fill='%23D4AF37' text-anchor='middle'>P</text></svg>">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        scentCream: '#FDFBF7',
+                        scentAmber: '#D4AF37',
+                        scentCharcoal: '#1A1A1A',
+                        scentEarth: '#705335'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .vial {
+            width: 5px; height: 18px;
+            border: 1px solid #1A1A1A;
+            border-radius: 2px;
+            position: relative;
+            overflow: hidden;
+            flex-shrink: 0;
+            background: rgba(26,26,26,0.04);
+        }
+        .vial-fill { position: absolute; bottom: 0; left: 0; right: 0; background: #D4AF37; }
+
+        /* Zoom lens: on hover, the main image is magnified and panned
+           based on cursor position relative to the image bounds. */
+        .zoom-container { cursor: zoom-in; }
+        .zoom-container img { transition: transform 0.1s ease-out; }
+        .zoom-container.zoomed img { cursor: zoom-out; }
+
+        @media (prefers-reduced-motion: reduce) {
+            * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+        }
+    </style>
+</head>
+<body class="bg-scentCream text-scentCharcoal font-sans antialiased">
+
+    <%- include('../partials/userNavbar') %>
+
+    <div class="max-w-7xl mx-auto px-6 py-8">
+
+        <!-- Breadcrumbs -->
+        <nav aria-label="Breadcrumb" class="text-xs text-stone-400 mb-8">
+            <ol class="flex items-center gap-2">
+                <li><a href="/" class="hover:text-scentAmber transition-colors duration-300">Home</a></li>
+                <li>/</li>
+                <li><a href="/products" class="hover:text-scentAmber transition-colors duration-300">Fragrances</a></li>
+                <% if (product.categoryId && product.categoryId.name) { %>
+                    <li>/</li>
+                    <li>
+                        <a href="/products?categoryId=<%= product.categoryId._id %>" class="hover:text-scentAmber transition-colors duration-300"><%= product.categoryId.name %></a>
+                    </li>
+                <% } %>
+                <li>/</li>
+                <li class="text-scentCharcoal font-medium truncate max-w-[200px]"><%= product.name %></li>
+            </ol>
+        </nav>
+
+        <div class="grid md:grid-cols-2 gap-12">
+
+            <!-- Image gallery -->
+            <div>
+                <div id="zoomContainer" class="zoom-container relative bg-stone-50 rounded-md border border-stone-100 h-[420px] md:h-[520px] overflow-hidden mb-4">
+                    <% if (product.image && product.image[0]) { %>
+                        <img id="mainImage" src="<%= product.image[0] %>" alt="<%= product.name %>"
+                             class="w-full h-full object-contain">
+                    <% } else { %>
+                        <div class="w-full h-full flex items-center justify-center text-stone-400 text-sm">No image available</div>
+                    <% } %>
+                </div>
+
+                <% if (product.image && product.image.length > 1) { %>
+                    <div class="flex gap-3">
+                        <% product.image.forEach((img, index) => { %>
+                            <button type="button" onclick="setMainImage('<%= img %>', this)"
+                                    class="thumb-btn w-16 h-16 rounded-md border-2 <%= index === 0 ? 'border-scentAmber' : 'border-stone-200' %> overflow-hidden shrink-0 hover:border-scentAmber transition-colors duration-200">
+                                <img src="<%= img %>" alt="<%= product.name %> view <%= index + 1 %>" class="w-full h-full object-cover">
+                            </button>
+                        <% }) %>
+                    </div>
+                <% } %>
+            </div>
+
+            <!-- Details -->
+            <div>
+                <span class="text-xs uppercase tracking-widest text-stone-400 font-semibold"><%= product.brand %></span>
+                <h1 class="font-serif text-3xl mt-2 mb-3"><%= product.name %></h1>
+
+                <!-- Ratings -->
+                <div class="flex items-center gap-2 mb-4">
+                    <% if (product.rating && product.rating.count > 0) { %>
+                        <span class="font-mono text-sm text-scentAmber">★ <%= product.rating.average.toFixed(1) %></span>
+                        <span class="text-xs text-stone-400">(<%= product.rating.count %> review<%= product.rating.count === 1 ? '' : 's' %>)</span>
+                    <% } else { %>
+                        <span class="text-xs text-stone-400">No reviews yet</span>
+                    <% } %>
+                </div>
+
+                <div class="flex items-center gap-2 mb-6">
+                    <div class="vial"><div class="vial-fill" style="height:<%= product.concentration === 'Extrait de Parfum' ? 100 : product.concentration === 'Eau de Parfum' ? 62 : product.concentration === 'Eau de Toilette' ? 30 : 15 %>%;"></div></div>
+                    <span class="text-sm text-stone-500"><%= product.concentration || 'Concentration unlisted' %></span>
+                </div>
+
+                <%
+                    const activeOffer = (product.offer || []).find(o => o.isActive && new Date(o.expiryDate) > new Date());
+                    const discountPercent = activeOffer ? activeOffer.discountPercent : 0;
+                %>
+
+                <!-- Variant / size selector -->
+                <div class="mb-6">
+                    <p class="text-xs uppercase tracking-widest text-stone-400 font-semibold mb-3">Select size</p>
+                    <div class="flex flex-wrap gap-2">
+                        <% product.varients.forEach((v, index) => { %>
+                            <button type="button"
+                                    onclick="selectVariant(<%= index %>)"
+                                    data-stock="<%= v.stock %>"
+                                    data-base="<%= v.basePrice %>"
+                                    data-sale="<%= v.salePrice %>"
+                                    class="variant-btn px-4 py-2 rounded-sm text-sm border <%= index === 0 ? 'border-scentCharcoal bg-scentCharcoal text-white' : 'border-stone-200 text-scentCharcoal hover:border-scentCharcoal' %> transition-colors duration-200 <%= v.stock === 0 ? 'opacity-40 cursor-not-allowed' : '' %>"
+                                    <%= v.stock === 0 ? 'disabled' : '' %>>
+                                <%= v.size %>
+                            </button>
+                        <% }) %>
+                    </div>
+                </div>
+
+                <!-- Price -->
+                <div class="mb-6 pb-6 border-b border-stone-100">
+                    <div class="flex items-baseline gap-3 flex-wrap">
+                        <span id="currentPrice" class="text-3xl font-serif text-scentCharcoal"></span>
+                        <span id="originalPrice" class="text-lg text-stone-400 line-through hidden"></span>
+                        <span id="discountBadge" class="bg-scentAmber text-scentCharcoal text-xs font-semibold px-2 py-1 rounded uppercase tracking-wide hidden"></span>
+                    </div>
+                    <p id="savedAmount" class="text-xs text-green-600 mt-1 hidden"></p>
+                    <p class="text-[11px] text-stone-400 mt-1">Inclusive of all taxes</p>
+                    <p id="stockMessage" class="text-xs mt-2"></p>
+                </div>
+
+                <!-- Add to cart -->
+                <button id="addToCartBtn" type="button"
+                        class="w-full py-3.5 rounded-sm text-sm font-semibold uppercase tracking-widest bg-scentCharcoal text-white hover:bg-scentAmber hover:text-scentCharcoal transition-colors duration-300 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-scentCharcoal disabled:hover:text-white">
+                    Add to Cart
+                </button>
+
+                <% if (product.description) { %>
+                    <div class="mt-8 pt-8 border-t border-stone-100">
+                        <p class="text-xs uppercase tracking-widest text-stone-400 font-semibold mb-3">Description</p>
+                        <p class="text-sm text-stone-600 leading-relaxed"><%= product.description %></p>
+                    </div>
+                <% } %>
+
+                <!-- Highlights -->
+                <div class="mt-6 pt-6 border-t border-stone-100">
+                    <p class="text-xs uppercase tracking-widest text-stone-400 font-semibold mb-3">Highlights</p>
+                    <ul class="text-sm text-stone-600 space-y-2">
+                        <li class="flex gap-2"><span class="text-scentAmber">•</span> <%= product.concentration || 'Concentration unlisted' %></li>
+                        <li class="flex gap-2"><span class="text-scentAmber">•</span> Brand: <%= product.brand %></li>
+                        <% if (product.productCode) { %>
+                            <li class="flex gap-2"><span class="text-scentAmber">•</span> Product code: <%= product.productCode %></li>
+                        <% } %>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reviews -->
+        <div class="mt-16 pt-10 border-t border-stone-100">
+            <h2 class="font-serif text-xl mb-6">Reviews</h2>
+            <% if (product.rating && product.rating.count > 0) { %>
+                <p class="text-sm text-stone-500">★ <%= product.rating.average.toFixed(1) %> average from <%= product.rating.count %> review<%= product.rating.count === 1 ? '' : 's' %>.</p>
+            <% } else { %>
+                <p class="text-sm text-stone-400">No reviews yet — be the first to share your thoughts.</p>
+            <% } %>
+        </div>
+
+        <!-- Related products -->
+        <% if (similarProduct && similarProduct.length > 0) { %>
+            <div class="mt-16 pt-10 border-t border-stone-100">
+                <h2 class="font-serif text-xl mb-6">You may also like</h2>
+                <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <% similarProduct.forEach((rp) => {
+                        const rpVariants = rp.varients || [];
+                        const rpPrices = rpVariants.map(v => v.salePrice).filter(p => typeof p === 'number');
+                        const rpLowest = rpPrices.length ? Math.min(...rpPrices) : null;
+                    %>
+                        <a href="/products/<%= rp.slug %>" class="group flex flex-col">
+                            <div class="bg-stone-50 rounded-md p-4 h-48 flex items-center justify-center mb-3 border border-stone-100 group-hover:shadow-md transition-shadow duration-300">
+                                <% if (rp.image && rp.image[0]) { %>
+                                    <img src="<%= rp.image[0] %>" alt="<%= rp.name %>" class="max-h-32 object-contain">
+                                <% } else { %>
+                                    <div class="text-xs text-stone-400">No image</div>
+                                <% } %>
+                            </div>
+                            <span class="text-xs text-stone-400 uppercase tracking-wider"><%= rp.brand %></span>
+                            <h3 class="text-sm font-medium text-stone-800 group-hover:text-scentAmber transition-colors duration-300 truncate"><%= rp.name %></h3>
+                            <% if (rpLowest !== null) { %>
+                                <span class="text-sm font-semibold mt-1">$<%= rpLowest.toLocaleString('en-IN') %></span>
+                            <% } %>
+                        </a>
+                    <% }) %>
+                </div>
+            </div>
+        <% } %>
+    </div>
+
+    <footer class="bg-scentCharcoal text-stone-400 py-12 px-6 text-center text-sm mt-16">
+        <p>&copy; 2026 Presense E-Commerce. Built with Node.js, Express, & MongoDB.</p>
+    </footer>
+
+    <script>
+        const variants = <%- JSON.stringify(product.varients || []) %>;
+        const discountPercent = <%= discountPercent || 0 %>;
+        let selectedIndex = variants.findIndex(v => v.stock > 0);
+        if (selectedIndex === -1) selectedIndex = 0; // all sold out — still show first for reference
+
+        const currentPriceEl = document.getElementById('currentPrice');
+        const originalPriceEl = document.getElementById('originalPrice');
+        const discountBadgeEl = document.getElementById('discountBadge');
+        const savedAmountEl = document.getElementById('savedAmount');
+        const stockMessageEl = document.getElementById('stockMessage');
+        const addToCartBtn = document.getElementById('addToCartBtn');
+        const variantButtons = document.querySelectorAll('.variant-btn');
+
+        function formatPrice(n) {
+            return '$' + Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function renderVariant() {
+            const v = variants[selectedIndex];
+            if (!v) return;
+
+            // salePrice is the standing selling price (already discounted vs basePrice/MRP).
+            // An active offer, if any, discounts further off the salePrice.
+            const finalPrice = discountPercent > 0
+                ? v.salePrice - (v.salePrice * discountPercent / 100)
+                : v.salePrice;
+
+            currentPriceEl.textContent = formatPrice(finalPrice);
+
+            // Show basePrice (MRP) struck through whenever it's actually higher
+            // than what the customer pays — same pattern as Amazon/Nykaa etc.
+            if (v.basePrice > finalPrice) {
+                originalPriceEl.textContent = formatPrice(v.basePrice);
+                originalPriceEl.classList.remove('hidden');
+
+                const totalDiscount = Math.round((1 - finalPrice / v.basePrice) * 100);
+                discountBadgeEl.textContent = `${totalDiscount}% off`;
+                discountBadgeEl.classList.remove('hidden');
+
+                const savedRupees = (v.basePrice - finalPrice).toFixed(2);
+                savedAmountEl.textContent = `You save $${Number(savedRupees).toLocaleString('en-IN')}`;
+                savedAmountEl.classList.remove('hidden');
+            } else {
+                originalPriceEl.classList.add('hidden');
+                discountBadgeEl.classList.add('hidden');
+                savedAmountEl.classList.add('hidden');
+            }
+
+            if (v.stock === 0) {
+                stockMessageEl.textContent = 'Sold out';
+                stockMessageEl.className = 'text-xs mt-2 text-red-500 font-medium';
+                addToCartBtn.disabled = true;
+                addToCartBtn.textContent = 'Sold Out';
+            } else if (v.stock <= 5) {
+                stockMessageEl.textContent = `Only ${v.stock} left in stock`;
+                stockMessageEl.className = 'text-xs mt-2 text-scentEarth font-medium';
+                addToCartBtn.disabled = false;
+                addToCartBtn.textContent = 'Add to Cart';
+            } else {
+                stockMessageEl.textContent = 'In stock';
+                stockMessageEl.className = 'text-xs mt-2 text-green-600';
+                addToCartBtn.disabled = false;
+                addToCartBtn.textContent = 'Add to Cart';
+            }
+
+            variantButtons.forEach((btn, i) => {
+                if (i === selectedIndex) {
+                    btn.classList.add('border-scentCharcoal', 'bg-scentCharcoal', 'text-white');
+                    btn.classList.remove('border-stone-200', 'text-scentCharcoal');
+                } else {
+                    btn.classList.remove('border-scentCharcoal', 'bg-scentCharcoal', 'text-white');
+                    btn.classList.add('border-stone-200', 'text-scentCharcoal');
+                }
+            });
+        }
+
+        function selectVariant(index) {
+            if (variants[index].stock === 0) return; // guard, though the button is already disabled
+            selectedIndex = index;
+            renderVariant();
+        }
+
+        addToCartBtn.addEventListener('click', () => {
+            const v = variants[selectedIndex];
+            if (!v || v.stock === 0) return;
+            // wire this up to your actual add-to-cart endpoint
+            console.log('Add to cart:', { size: v.size, quantity: 1 });
+        });
+
+        renderVariant();
+
+        // --- Image gallery ---
+        function setMainImage(src, btn) {
+            document.getElementById('mainImage').src = src;
+            document.querySelectorAll('.thumb-btn').forEach((b) => {
+                b.classList.remove('border-scentAmber');
+                b.classList.add('border-stone-200');
+            });
+            btn.classList.remove('border-stone-200');
+            btn.classList.add('border-scentAmber');
+        }
+
+        // --- Zoom on hover ---
+        (function() {
+            const container = document.getElementById('zoomContainer');
+            const img = document.getElementById('mainImage');
+            if (!container || !img) return;
+
+            const ZOOM_LEVEL = 2;
+
+            container.addEventListener('mousemove', (e) => {
+                const rect = container.getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 100;
+                const y = ((e.clientY - rect.top) / rect.height) * 100;
+                img.style.transformOrigin = `${x}% ${y}%`;
+                img.style.transform = `scale(${ZOOM_LEVEL})`;
+                container.classList.add('zoomed');
+            });
+
+            container.addEventListener('mouseleave', () => {
+                img.style.transform = 'scale(1)';
+                container.classList.remove('zoomed');
+            });
+        })();
+    </script>
+</body>
+</html>

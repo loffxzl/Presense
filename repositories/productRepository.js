@@ -27,3 +27,7 @@ export const countProduct = async (filter)=> {
 export const findProductAny = async (filter) => {
     return Product.findOne(filter);
 }
+
+export const findAllProduct = async(filter,limit) => {
+    return await Product.find(filter).limit(limit);
+}

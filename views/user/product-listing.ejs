@@ -52,7 +52,9 @@
 <body class="bg-scentCream text-scentCharcoal font-sans antialiased">
 
     <!-- NAVIGATION BAR -->
-    <%- include('../partials/userNavbar', { search, categoryId, sortby, minPrice, maxPrice }) %>
+    <div class="sticky top-0 z-50">
+        <%- include('../partials/userNavbar', { search, categoryId, sortby, minPrice, maxPrice }) %>
+    </div>
 
     <!-- Page intro strip -->
     <header class="relative bg-stone-950 px-6 py-10 overflow-hidden">
