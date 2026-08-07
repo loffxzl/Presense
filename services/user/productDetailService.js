@@ -33,10 +33,6 @@ export const findProductDetail = async ({slug, sizeby, limit = 4}) => {
 
 
 
-
-
-
-
 // c. Product details page
 // i. Zoomable images
 // ii. Breadcrumbs, ratings, price, discounts/coupons, reviews, stock info

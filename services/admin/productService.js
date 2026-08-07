@@ -40,7 +40,7 @@ export const addProduct = async (data, images = [])=> {
     if(existSlug) throw new AppError('A product with this name already exists',409);
 
     const generateProductCode = customAlphabet('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', 8);
-    const productCode = `PRD-${generateProductCode()}`; // e.g. "PRD-7K2N9XQP"
+    const productCode = `PRD-${generateProductCode()}`; 
     
     return productRepository.addProduct({
         name,

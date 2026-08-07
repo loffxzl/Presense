@@ -34,8 +34,6 @@
         }
         .vial-fill { position: absolute; bottom: 0; left: 0; right: 0; background: #D4AF37; }
 
-        /* Zoom lens: on hover, the main image is magnified and panned
-           based on cursor position relative to the image bounds. */
         .zoom-container { cursor: zoom-in; }
         .zoom-container img { transition: transform 0.1s ease-out; }
         .zoom-container.zoomed img { cursor: zoom-out; }
@@ -148,11 +146,22 @@
                     <p id="stockMessage" class="text-xs mt-2"></p>
                 </div>
 
+                <!-- Quantity -->
+                <div class="flex items-center gap-3 mb-4">
+                    <span class="text-xs uppercase tracking-widest text-stone-400 font-semibold">Qty</span>
+                    <div class="flex items-center border border-stone-200 rounded-sm">
+                        <button type="button" id="qtyMinus" class="w-9 h-9 text-scentCharcoal hover:bg-stone-50 transition-colors duration-200" aria-label="Decrease quantity">–</button>
+                        <span id="qtyValue" class="w-10 text-center text-sm font-mono">1</span>
+                        <button type="button" id="qtyPlus" class="w-9 h-9 text-scentCharcoal hover:bg-stone-50 transition-colors duration-200" aria-label="Increase quantity">+</button>
+                    </div>
+                </div>
+
                 <!-- Add to cart -->
                 <button id="addToCartBtn" type="button"
                         class="w-full py-3.5 rounded-sm text-sm font-semibold uppercase tracking-widest bg-scentCharcoal text-white hover:bg-scentAmber hover:text-scentCharcoal transition-colors duration-300 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-scentCharcoal disabled:hover:text-white">
                     Add to Cart
                 </button>
+                <p id="addToCartMessage" class="text-xs mt-2 hidden"></p>
 
                 <% if (product.description) { %>
                     <div class="mt-8 pt-8 border-t border-stone-100">
@@ -220,10 +229,12 @@
     </footer>
 
     <script>
+        const productId = <%- JSON.stringify(product._id) %>;
         const variants = <%- JSON.stringify(product.varients || []) %>;
         const discountPercent = <%= discountPercent || 0 %>;
         let selectedIndex = variants.findIndex(v => v.stock > 0);
-        if (selectedIndex === -1) selectedIndex = 0; // all sold out — still show first for reference
+        if (selectedIndex === -1) selectedIndex = 0;
+        let quantity = 1;
 
         const currentPriceEl = document.getElementById('currentPrice');
         const originalPriceEl = document.getElementById('originalPrice');
@@ -231,7 +242,11 @@
         const savedAmountEl = document.getElementById('savedAmount');
         const stockMessageEl = document.getElementById('stockMessage');
         const addToCartBtn = document.getElementById('addToCartBtn');
+        const addToCartMessageEl = document.getElementById('addToCartMessage');
         const variantButtons = document.querySelectorAll('.variant-btn');
+        const qtyValueEl = document.getElementById('qtyValue');
+        const qtyMinusBtn = document.getElementById('qtyMinus');
+        const qtyPlusBtn = document.getElementById('qtyPlus');
 
         function formatPrice(n) {
             return '$' + Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -241,16 +256,12 @@
             const v = variants[selectedIndex];
             if (!v) return;
 
-            // salePrice is the standing selling price (already discounted vs basePrice/MRP).
-            // An active offer, if any, discounts further off the salePrice.
             const finalPrice = discountPercent > 0
                 ? v.salePrice - (v.salePrice * discountPercent / 100)
                 : v.salePrice;
 
             currentPriceEl.textContent = formatPrice(finalPrice);
 
-            // Show basePrice (MRP) struck through whenever it's actually higher
-            // than what the customer pays — same pattern as Amazon/Nykaa etc.
             if (v.basePrice > finalPrice) {
                 originalPriceEl.textContent = formatPrice(v.basePrice);
                 originalPriceEl.classList.remove('hidden');
@@ -267,6 +278,10 @@
                 discountBadgeEl.classList.add('hidden');
                 savedAmountEl.classList.add('hidden');
             }
+
+            quantity = v.stock > 0 ? 1 : 0;
+            qtyValueEl.textContent = quantity;
+            updateQtyButtonStates();
 
             if (v.stock === 0) {
                 stockMessageEl.textContent = 'Sold out';
@@ -294,19 +309,88 @@
                     btn.classList.add('border-stone-200', 'text-scentCharcoal');
                 }
             });
+
+            hideAddToCartMessage();
         }
 
         function selectVariant(index) {
-            if (variants[index].stock === 0) return; // guard, though the button is already disabled
+            if (variants[index].stock === 0) return;
             selectedIndex = index;
             renderVariant();
         }
 
-        addToCartBtn.addEventListener('click', () => {
+        function updateQtyButtonStates() {
+            const v = variants[selectedIndex];
+            qtyMinusBtn.disabled = quantity <= 1;
+            qtyPlusBtn.disabled = !v || quantity >= v.stock;
+            qtyMinusBtn.classList.toggle('opacity-30', qtyMinusBtn.disabled);
+            qtyPlusBtn.classList.toggle('opacity-30', qtyPlusBtn.disabled);
+        }
+
+        qtyMinusBtn.addEventListener('click', () => {
+            if (quantity <= 1) return;
+            quantity -= 1;
+            qtyValueEl.textContent = quantity;
+            updateQtyButtonStates();
+        });
+
+        qtyPlusBtn.addEventListener('click', () => {
+            const v = variants[selectedIndex];
+            if (!v || quantity >= v.stock) return;
+            quantity += 1;
+            qtyValueEl.textContent = quantity;
+            updateQtyButtonStates();
+        });
+
+        function showAddToCartMessage(text, isError) {
+            addToCartMessageEl.textContent = text;
+            addToCartMessageEl.className = `text-xs mt-2 ${isError ? 'text-red-500' : 'text-green-600'}`;
+            addToCartMessageEl.classList.remove('hidden');
+        }
+
+        function hideAddToCartMessage() {
+            addToCartMessageEl.classList.add('hidden');
+        }
+
+        let isAddingToCart = false;
+        addToCartBtn.addEventListener('click', async () => {
+            if (isAddingToCart) return;
             const v = variants[selectedIndex];
             if (!v || v.stock === 0) return;
-            // wire this up to your actual add-to-cart endpoint
-            console.log('Add to cart:', { size: v.size, quantity: 1 });
+
+            isAddingToCart = true;
+            const originalText = addToCartBtn.textContent;
+            addToCartBtn.disabled = true;
+            addToCartBtn.textContent = 'Adding...';
+            hideAddToCartMessage();
+
+            try {
+                const response = await fetch('/cart', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        productId,
+                        variantId: v._id,
+                        quantity
+                    })
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    showAddToCartMessage(result.message || 'Could not add to cart', true);
+                    return;
+                }
+
+                showAddToCartMessage('Added to your bag ✓', false);
+            } catch (err) {
+                showAddToCartMessage('Network error — please try again', true);
+            } finally {
+                isAddingToCart = false;
+                addToCartBtn.disabled = false;
+                addToCartBtn.textContent = originalText;
+            }
         });
 
         renderVariant();

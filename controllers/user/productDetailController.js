@@ -17,9 +17,9 @@ export const getProductDetail = catchAsync( async(req, res)=> {
     })
 })
 
-// export const postProductReview = catchAsync( async(req, res)=> {
-
-// })
+export const postProductReview = catchAsync( async(req, res)=> {
+    
+})
 
 // export const deleteProductReview = catchAsync( async(req,res) => {
 
