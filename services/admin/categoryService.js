@@ -2,6 +2,8 @@ import * as categorieRepository from '../../repositories/categorieRepository.js'
 import { z } from 'zod';
 import slugify from "slugify";
 import AppError from '../../utils/AppError.js';
+import {escapeRegex} from '../../utils/escapeRegex.js';
+
 
 const categorySchema = z.object({
   name: z.string().trim().min(2, 'Name must be at least 2 characters').max(50, 'Name too long'),
@@ -41,8 +43,12 @@ export const addCategoryService = async (data, imageUrl = null) => {
 
     const { name, description, status } = parsed.data;
 
-    const DuplicateCategory = await categorieRepository.findCategoryByOne({ name: name, isDeleted: {$ne: true}});
-    console.log(DuplicateCategory)
+    console.log(name)
+    console.log(typeof(name));
+
+    const DuplicateCategory = await categorieRepository.findCategoryByOne({ 
+      name: {$regex:`^${escapeRegex(name.trim())}$`, $options: 'i'},
+      isDeleted: {$ne: true}});
 
     if(DuplicateCategory) throw new AppError('name already exists', 409);
 

@@ -1,255 +1,196 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title><%= title %> | Presense</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> | Presense</title>
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='25' fill='%231A1A1A'/><text x='50%' y='68%' font-family='Georgia, serif' font-size='55' font-weight='bold' fill='%23D4AF37' text-anchor='middle'>P</text></svg>">
 
-<style>
-    :root{
-        --bg:#E4E0D4;
-        --ink:#18160F;
-        --ink-soft:#5A5647;
-        --card:#F7F5EE;
-        --line:#C7C0AC;
-        --accent:#7A2E22;
-        --sale:#4B5A3D;
-    }
-    *{ box-sizing:border-box; }
-    body{ margin:0; background:var(--bg); color:var(--ink); font-family:'Work Sans', sans-serif; -webkit-font-smoothing:antialiased; }
-    a{ color:inherit; text-decoration:none; }
-
-    header{
-        display:flex; align-items:center; justify-content:space-between;
-        padding:22px 48px; border-bottom:1px solid var(--line);
-    }
-    .wordmark{ font-family:'Fraunces', serif; font-size:22px; font-weight:600; }
-    .header-links{ display:flex; gap:28px; font-size:13px; }
-    .header-links a{ opacity:0.75; } .header-links a:hover{ opacity:1; }
-
-    main{ padding:48px; max-width:920px; margin:0 auto; }
-    h1{ font-family:'Fraunces', serif; font-style:italic; font-weight:400; font-size:32px; margin:0 0 32px; }
-
-    .empty{
-        border:1px solid var(--line); background:var(--card);
-        padding:80px 24px; text-align:center;
-    }
-    .empty h3{ font-family:'Fraunces', serif; font-style:italic; font-weight:400; font-size:24px; margin:0 0 8px; }
-    .empty p{ color:var(--ink-soft); font-size:14px; margin:0 0 20px; }
-    .empty a{
-        display:inline-block; font-family:'IBM Plex Mono', monospace; font-size:11px;
-        text-transform:uppercase; letter-spacing:0.08em; padding:10px 20px;
-        border:1px solid var(--ink); border-radius:6px;
-    }
-
-    .cart-item{
-        display:grid;
-        grid-template-columns:88px 1fr auto auto;
-        gap:18px;
-        align-items:center;
-        padding:20px 0;
-        border-bottom:1px solid var(--line);
-    }
-    .cart-item img{ width:88px; height:88px; object-fit:cover; border-radius:6px; background:#DEDACC; }
-    .no-image-sm{
-        width:88px; height:88px; border-radius:6px; background:#DEDACC;
-        display:flex; align-items:center; justify-content:center;
-        font-family:'IBM Plex Mono', monospace; font-size:9px; color:var(--ink-soft);
-        text-transform:uppercase; letter-spacing:0.06em; text-align:center;
-    }
-
-    .item-brand{ font-family:'IBM Plex Mono', monospace; font-size:10px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-soft); }
-    .item-name{ font-family:'Fraunces', serif; font-size:18px; font-weight:500; margin:2px 0; }
-    .item-size{ font-size:12px; color:var(--ink-soft); }
-    .item-warning{ font-size:12px; color:var(--accent); margin-top:4px; }
-
-    .qty-control{ display:flex; align-items:center; border:1px solid var(--line); border-radius:6px; }
-    .qty-control button{
-        width:30px; height:30px; border:none; background:transparent; cursor:pointer;
-        font-family:'IBM Plex Mono', monospace; font-size:14px; color:var(--ink);
-    }
-    .qty-control button:disabled{ opacity:0.3; cursor:not-allowed; }
-    .qty-control span{ width:28px; text-align:center; font-family:'IBM Plex Mono', monospace; font-size:13px; }
-
-    .item-side{ display:flex; flex-direction:column; align-items:flex-end; gap:8px; }
-    .line-price{ font-family:'IBM Plex Mono', monospace; font-size:14px; }
-    .remove-btn{
-        font-family:'IBM Plex Mono', monospace; font-size:10px; text-transform:uppercase;
-        letter-spacing:0.06em; color:var(--ink-soft); background:none; border:none; cursor:pointer;
-        border-bottom:1px solid var(--line);
-    }
-    .remove-btn:hover{ color:var(--accent); border-color:var(--accent); }
-
-    .summary{
-        margin-top:32px; padding-top:20px; border-top:1px solid var(--ink);
-        display:flex; justify-content:space-between; align-items:baseline;
-    }
-    .summary .label{ font-family:'IBM Plex Mono', monospace; font-size:12px; text-transform:uppercase; letter-spacing:0.08em; color:var(--ink-soft); }
-    .summary .amount{ font-family:'Fraunces', serif; font-size:26px; }
-
-    .checkout-note{ font-size:12px; color:var(--accent); margin-top:10px; text-align:right; }
-
-    .checkout-btn{
-        margin-top:24px; width:100%; padding:16px;
-        font-family:'IBM Plex Mono', monospace; font-size:12px; text-transform:uppercase; letter-spacing:0.08em;
-        background:var(--ink); color:var(--card); border:none; border-radius:6px; cursor:pointer;
-    }
-    .checkout-btn:disabled{ opacity:0.5; cursor:not-allowed; }
-
-    @media (max-width:600px){
-        header, main{ padding-left:20px; padding-right:20px; }
-        .header-links{ display:none; }
-        .cart-item{ grid-template-columns:64px 1fr; grid-template-rows:auto auto; }
-        .cart-item img, .no-image-sm{ width:64px; height:64px; }
-        .item-side{ grid-column:2; flex-direction:row; justify-content:space-between; align-items:center; }
-        .qty-control{ grid-column:2; }
-    }
-</style>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        scentCream: '#FDFBF7',
+                        scentAmber: '#D4AF37',
+                        scentCharcoal: '#1A1A1A',
+                        scentEarth: '#705335'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @media (prefers-reduced-motion: reduce) {
+            * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+        }
+    </style>
 </head>
-<body>
+<body class="bg-scentCream text-scentCharcoal font-sans antialiased">
 
-<header>
-    <a href="/" class="wordmark">Presense</a>
-    <nav class="header-links">
-        <a href="/products">Fragrances</a>
-        <a href="/about">Story</a>
-        <a href="/account">Account</a>
-        <a href="/cart">Bag</a>
-    </nav>
-</header>
+    <div class="sticky top-0 z-50">
+        <%- include('../partials/userNavbar') %>
+    </div>
 
-<main>
-    <h1>Your bag</h1>
+    <!-- Page intro strip -->
+    <header class="relative bg-stone-950 px-6 py-10 overflow-hidden">
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(212,175,55,0.12)_0%,transparent_60%)] pointer-events-none"></div>
+        <div class="max-w-7xl mx-auto relative z-10">
+            <span class="text-xs uppercase tracking-widest text-scentAmber font-semibold block mb-2">Checkout</span>
+            <h1 class="text-2xl md:text-3xl font-serif text-white tracking-wide">Your Bag</h1>
+        </div>
+    </header>
 
     <%
-        const currency = (n) => '₹' + Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const currency = (n) => '$' + Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         const hasBlockingIssue = items.some((i) => i.unavailable || i.quantity > i.stock);
     %>
 
-    <div id="cartRoot">
-        <% if (items.length === 0) { %>
-            <div class="empty">
-                <h3>Your bag is empty.</h3>
-                <p>Whatever you're drawn to is still waiting on the shelf.</p>
-                <a href="/products">Browse fragrances</a>
-            </div>
-        <% } else { %>
-            <div id="itemsList">
-                <% items.forEach((item) => { %>
-                    <div class="cart-item" data-product-id="<%= item.productId %>" data-variant-id="<%= item.variantId %>" data-stock="<%= item.stock %>">
-                        <% if (item.image) { %>
-                            <img src="<%= item.image %>" alt="<%= item.name %>">
-                        <% } else { %>
-                            <div class="no-image-sm">No image</div>
-                        <% } %>
+    <div class="max-w-4xl mx-auto px-6 py-14">
 
-                        <div>
-                            <div class="item-brand"><%= item.brand %></div>
-                            <div class="item-name"><%= item.name %></div>
-                            <div class="item-size"><%= item.size %></div>
-                            <% if (item.unavailable) { %>
-                                <div class="item-warning">This size is no longer available</div>
-                            <% } else if (item.quantity > item.stock) { %>
-                                <div class="item-warning">Only <%= item.stock %> left in stock</div>
-                            <% } %>
-                        </div>
+        <div id="cartRoot">
+            <% if (items.length === 0) { %>
+                <div class="border border-stone-100 rounded-md py-24 text-center bg-white">
+                    <p class="font-serif text-xl mb-2">Your bag is empty</p>
+                    <p class="text-sm text-stone-500 mb-6">Whatever you're drawn to is still waiting on the shelf.</p>
+                    <a href="/products"
+                       class="inline-block text-xs font-semibold uppercase tracking-widest px-6 py-3 rounded-sm border border-scentCharcoal hover:bg-scentCharcoal hover:text-white transition-colors duration-300">
+                        Browse fragrances
+                    </a>
+                </div>
+            <% } else { %>
+                <div class="bg-white border border-stone-100 rounded-md">
+                    <div id="itemsList" class="divide-y divide-stone-100">
+                        <% items.forEach((item) => { %>
+                            <div class="cart-item flex items-center gap-5 p-6"
+                                 data-product-id="<%= item.productId %>" data-variant-id="<%= item.variantId %>" data-stock="<%= item.stock %>">
 
-                        <div class="qty-control">
-                            <button type="button" class="qty-minus" aria-label="Decrease quantity" <%= item.quantity <= 1 ? 'disabled' : '' %>>–</button>
-                            <span class="qty-value"><%= item.quantity %></span>
-                            <button type="button" class="qty-plus" aria-label="Increase quantity" <%= (item.unavailable || item.quantity >= item.stock) ? 'disabled' : '' %>>+</button>
-                        </div>
+                                <% if (item.image) { %>
+                                    <img src="<%= item.image %>" alt="<%= item.name %>"
+                                         class="w-20 h-20 object-cover rounded-md border border-stone-100 shrink-0">
+                                <% } else { %>
+                                    <div class="w-20 h-20 rounded-md bg-stone-50 border border-stone-100 flex items-center justify-center text-[10px] text-stone-400 uppercase tracking-wide shrink-0">
+                                        No image
+                                    </div>
+                                <% } %>
 
-                        <div class="item-side">
-                            <span class="line-price"><%= currency(item.lineTotal) %></span>
-                            <button type="button" class="remove-btn">Remove</button>
-                        </div>
+                                <div class="flex-1 min-w-0">
+                                    <span class="text-xs text-stone-400 uppercase tracking-wider"><%= item.brand %></span>
+                                    <h3 class="font-serif text-lg truncate"><%= item.name %></h3>
+                                    <p class="text-xs text-stone-500 mt-0.5"><%= item.size %></p>
+                                    <% if (item.unavailable) { %>
+                                        <p class="text-xs text-scentEarth font-medium mt-1">This size is no longer available</p>
+                                    <% } else if (item.quantity > item.stock) { %>
+                                        <p class="text-xs text-scentEarth font-medium mt-1">Only <%= item.stock %> left in stock</p>
+                                    <% } %>
+                                </div>
+
+                                <div class="qty-control flex items-center border border-stone-200 rounded-sm shrink-0">
+                                    <button type="button" class="qty-minus w-8 h-8 text-sm text-scentCharcoal hover:bg-stone-50 transition-colors duration-200 disabled:opacity-30 disabled:cursor-not-allowed"
+                                            aria-label="Decrease quantity" <%= item.quantity <= 1 ? 'disabled' : '' %>>–</button>
+                                    <span class="qty-value w-8 text-center text-sm font-mono"><%= item.quantity %></span>
+                                    <button type="button" class="qty-plus w-8 h-8 text-sm text-scentCharcoal hover:bg-stone-50 transition-colors duration-200 disabled:opacity-30 disabled:cursor-not-allowed"
+                                            aria-label="Increase quantity" <%= (item.unavailable || item.quantity >= item.stock) ? 'disabled' : '' %>>+</button>
+                                </div>
+
+                                <div class="flex flex-col items-end gap-2 shrink-0">
+                                    <span class="text-sm font-semibold"><%= currency(item.lineTotal) %></span>
+                                    <button type="button" class="remove-btn text-[11px] uppercase tracking-widest text-stone-400 hover:text-scentEarth transition-colors duration-300 border-b border-stone-200 hover:border-scentEarth">
+                                        Remove
+                                    </button>
+                                </div>
+                            </div>
+                        <% }) %>
                     </div>
-                <% }) %>
-            </div>
+                </div>
 
-            <div class="summary">
-                <span class="label">Subtotal</span>
-                <span class="amount" id="subtotalAmount"><%= currency(subtotal) %></span>
-            </div>
+                <div class="flex justify-between items-baseline mt-8 pt-6 border-t border-stone-200">
+                    <span class="text-xs uppercase tracking-widest text-stone-400 font-semibold">Subtotal</span>
+                    <span class="font-serif text-3xl" id="subtotalAmount"><%= currency(subtotal) %></span>
+                </div>
 
-            <% if (hasBlockingIssue) { %>
-                <p class="checkout-note">Resolve unavailable or out-of-stock items before checking out.</p>
+                <% if (hasBlockingIssue) { %>
+                    <p class="text-xs text-scentEarth text-right mt-2">Resolve unavailable or out-of-stock items before checking out.</p>
+                <% } %>
+
+                <button type="button" id="checkoutBtn"
+                        class="w-full mt-6 py-3.5 rounded-sm text-sm font-semibold uppercase tracking-widest bg-scentCharcoal text-white hover:bg-scentAmber hover:text-scentCharcoal transition-colors duration-300 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-scentCharcoal disabled:hover:text-white"
+                        <%= hasBlockingIssue ? 'disabled' : '' %>>
+                    Proceed to checkout
+                </button>
             <% } %>
-
-            <button type="button" class="checkout-btn" id="checkoutBtn" <%= hasBlockingIssue ? 'disabled' : '' %>>
-                Proceed to checkout
-            </button>
-        <% } %>
+        </div>
     </div>
-</main>
 
-<script>
-    const itemsList = document.getElementById('itemsList');
+    <!-- Footer -->
+    <footer class="bg-scentCharcoal text-stone-400 py-12 px-6 text-center text-sm">
+        <p>&copy; 2026 Presense E-Commerce. Built with Node.js, Express, & MongoDB.</p>
+    </footer>
 
-    async function callCartApi(url, method, body) {
-        const response = await fetch(url, {
-            method,
-            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-            credentials: 'same-origin',
-            body: body ? JSON.stringify(body) : undefined
-        });
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.message || 'Something went wrong');
-        return result;
-    }
+    <script>
+        const itemsList = document.getElementById('itemsList');
 
-    function renderAfterUpdate(data) {
-        // Simplest reliable approach: reload so quantities/stock warnings/subtotal
-        // all stay perfectly in sync with the server.
-        window.location.reload();
-    }
+        async function callCartApi(url, method, body) {
+            const response = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                credentials: 'same-origin',
+                body: body ? JSON.stringify(body) : undefined
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.message || 'Something went wrong');
+            return result;
+        }
 
-    if (itemsList) {
-        itemsList.addEventListener('click', async (e) => {
-            if (e.target.disabled) return; // respect the disabled state rendered server-side
+        function renderAfterUpdate(data) {
+            // Simplest reliable approach: reload so quantities/stock warnings/subtotal
+            // all stay perfectly in sync with the server.
+            window.location.reload();
+        }
 
-            const row = e.target.closest('.cart-item');
-            if (!row) return;
-            const productId = row.dataset.productId;
-            const variantId = row.dataset.variantId;
-            const stock = Number(row.dataset.stock);
-            const qtyEl = row.querySelector('.qty-value');
-            const currentQty = Number(qtyEl.textContent);
+        if (itemsList) {
+            itemsList.addEventListener('click', async (e) => {
+                if (e.target.disabled) return; // respect the disabled state rendered server-side
 
-            try {
-                if (e.target.classList.contains('qty-plus')) {
-                    if (currentQty + 1 > stock) return alert('No more stock available for this size.');
-                    const data = await callCartApi(`/cart/${productId}/${variantId}`, 'PATCH', { quantity: currentQty + 1 });
-                    renderAfterUpdate(data);
+                const row = e.target.closest('.cart-item');
+                if (!row) return;
+                const productId = row.dataset.productId;
+                const variantId = row.dataset.variantId;
+                const stock = Number(row.dataset.stock);
+                const qtyEl = row.querySelector('.qty-value');
+                const currentQty = Number(qtyEl.textContent);
+
+                try {
+                    if (e.target.classList.contains('qty-plus')) {
+                        if (currentQty + 1 > stock) return alert('No more stock available for this size.');
+                        const data = await callCartApi(`/cart/${productId}/${variantId}`, 'PATCH', { quantity: currentQty + 1 });
+                        renderAfterUpdate(data);
+                    }
+                    if (e.target.classList.contains('qty-minus')) {
+                        if (currentQty <= 1) return; // use Remove to drop to zero
+                        const data = await callCartApi(`/cart/${productId}/${variantId}`, 'PATCH', { quantity: currentQty - 1 });
+                        renderAfterUpdate(data);
+                    }
+                    if (e.target.classList.contains('remove-btn')) {
+                        const data = await callCartApi(`/cart/${productId}/${variantId}`, 'DELETE');
+                        renderAfterUpdate(data);
+                    }
+                } catch (err) {
+                    alert(err.message);
                 }
-                if (e.target.classList.contains('qty-minus')) {
-                    if (currentQty <= 1) return; // use Remove to drop to zero
-                    const data = await callCartApi(`/cart/${productId}/${variantId}`, 'PATCH', { quantity: currentQty - 1 });
-                    renderAfterUpdate(data);
-                }
-                if (e.target.classList.contains('remove-btn')) {
-                    const data = await callCartApi(`/cart/${productId}/${variantId}`, 'DELETE');
-                    renderAfterUpdate(data);
-                }
-            } catch (err) {
-                alert(err.message);
-            }
-        });
-    }
+            });
+        }
 
-    const checkoutBtn = document.getElementById('checkoutBtn');
-    if (checkoutBtn) {
-        checkoutBtn.addEventListener('click', () => {
-            if (checkoutBtn.disabled) return;
-            window.location.href = '/checkout';
-        });
-    }
-</script>
+        const checkoutBtn = document.getElementById('checkoutBtn');
+        if (checkoutBtn) {
+            checkoutBtn.addEventListener('click', () => {
+                if (checkoutBtn.disabled) return;
+                window.location.href = '/checkout';
+            });
+        }
+    </script>
 
 </body>
 </html>

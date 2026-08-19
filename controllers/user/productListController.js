@@ -5,7 +5,7 @@ import * as categoryService from '../../services/admin/categoryService.js';
 export const getProduct = catchAsync(async (req, res) => {
     const { page = 1, search = '', categoryId = '', sortby = 'newest', minPrice, maxPrice } = req.query;
 
-    const data = await productService.listProduct({ page, limit: 10, search, categoryId, sortby, minPrice, maxPrice });
+    const data = await productService.listProduct({ page, limit: 10, search, categoryId, sortby, minPrice, maxPrice, userId: res.locals.user?._id });
     const categoryData = await categoryService.getCategoryList({ page: 1, limit: 1000 });
 
     return res.render('user/product-listing', {

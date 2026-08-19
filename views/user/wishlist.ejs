@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> | Presense</title>
+
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='25' fill='%231A1A1A'/><text x='50%' y='68%' font-family='Georgia, serif' font-size='55' font-weight='bold' fill='%23D4AF37' text-anchor='middle'>P</text></svg>">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        scentCream: '#FDFBF7',
+                        scentAmber: '#D4AF37',
+                        scentCharcoal: '#1A1A1A',
+                        scentEarth: '#705335'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-scentCream text-scentCharcoal font-sans antialiased">
+
+    <div class="sticky top-0 z-50">
+        <%- include('../partials/userNavbar') %>
+    </div>
+
+    <header class="relative bg-stone-950 px-6 py-10 overflow-hidden">
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(212,175,55,0.12)_0%,transparent_60%)] pointer-events-none"></div>
+        <div class="max-w-7xl mx-auto relative z-10">
+            <span class="text-xs uppercase tracking-widest text-scentAmber font-semibold block mb-2">Saved</span>
+            <h1 class="text-2xl md:text-3xl font-serif text-white tracking-wide">Your Wishlist</h1>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-6 py-14">
+
+        <div id="wishlistRoot">
+            <% if (items.length === 0) { %>
+                <div class="border border-stone-100 rounded-md py-24 text-center bg-white">
+                    <p class="font-serif text-xl mb-2">Your wishlist is empty</p>
+                    <p class="text-sm text-stone-500 mb-6">Save fragrances you're drawn to, and find them here later.</p>
+                    <a href="/products"
+                       class="inline-block text-xs font-semibold uppercase tracking-widest px-6 py-3 rounded-sm border border-scentCharcoal hover:bg-scentCharcoal hover:text-white transition-colors duration-300">
+                        Browse fragrances
+                    </a>
+                </div>
+            <% } else { %>
+
+                <div class="flex items-center justify-between mb-8">
+                    <p class="text-sm text-stone-500">
+                        <%= items.length %> item<%= items.length === 1 ? '' : 's' %> saved
+                    </p>
+                    <button id="moveAllBtn" type="button"
+                            class="text-xs font-semibold uppercase tracking-widest px-5 py-2.5 rounded-sm bg-scentCharcoal text-white hover:bg-scentAmber hover:text-scentCharcoal transition-colors duration-300">
+                        Move All to Cart
+                    </button>
+                </div>
+
+                <div id="wishlistGrid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <% items.forEach((item) => { %>
+                        <div
+                            class="wishlist-card group flex flex-col"
+                            data-product-id="<%= item.productId %>"
+                            data-name="<%= item.name %>"
+                            data-brand="<%= item.brand %>"
+                            data-image="<%= item.image || '' %>"
+                            data-variants='<%- JSON.stringify(item.variants).replace(/'/g, "&#39;") %>'
+                        >
+                            <div class="bg-stone-50 rounded-md p-6 h-64 flex items-center justify-center relative overflow-hidden mb-4 border border-stone-100">
+                                <button type="button" class="remove-btn absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-white/90 flex items-center justify-center text-scentEarth hover:bg-scentEarth hover:text-white transition-colors duration-300" aria-label="Remove from wishlist" title="Remove from wishlist">
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21s-6.7-4.3-9.3-8.1C1 10.1 1.5 6.6 4.4 5.1 6.7 3.9 9.4 4.6 11 6.6l1 1.2 1-1.2c1.6-2 4.3-2.7 6.6-1.5 2.9 1.5 3.4 5 1.7 7.8C18.7 16.7 12 21 12 21z"/></svg>
+                                </button>
+
+                                <% if (!item.inStock) { %>
+                                    <span class="absolute top-3 left-3 bg-stone-900 text-white text-[10px] uppercase font-semibold px-2 py-0.5 tracking-wider rounded z-10">Sold Out</span>
+                                <% } %>
+
+                                <a href="/products/<%= item.slug %>" class="block w-full h-full flex items-center justify-center">
+                                    <% if (item.image) { %>
+                                        <img src="<%= item.image %>" alt="<%= item.name %>"
+                                             class="max-h-40 object-contain transform transition-transform duration-500 group-hover:scale-105">
+                                    <% } else { %>
+                                        <div class="text-xs text-stone-400">No image</div>
+                                    <% } %>
+                                </a>
+                            </div>
+
+                            <a href="/products/<%= item.slug %>">
+                                <span class="text-xs text-stone-400 uppercase tracking-wider"><%= item.brand %></span>
+                                <h3 class="font-medium text-stone-800 group-hover:text-scentAmber transition-colors duration-300 mb-2 truncate"><%= item.name %></h3>
+                            </a>
+
+                            <div class="flex items-center justify-between mt-auto pt-3 border-t border-stone-100">
+                                <% if (item.price !== null) { %>
+                                    <span class="text-sm font-semibold text-stone-900">$<%= Number(item.price).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+                                <% } else { %>
+                                    <span class="text-xs text-stone-400">Unavailable</span>
+                                <% } %>
+                                <a href="/products/<%= item.slug %>"
+                                   class="text-xs uppercase tracking-widest font-semibold text-scentCharcoal hover:text-scentAmber transition-colors duration-300">
+                                    View
+                                </a>
+                            </div>
+
+                            <button type="button"
+                                    class="move-to-cart-btn mt-3 w-full py-2.5 rounded-sm text-[11px] font-semibold uppercase tracking-widest border border-scentCharcoal text-scentCharcoal hover:bg-scentCharcoal hover:text-white transition-colors duration-300 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-scentCharcoal"
+                                    <%= !item.inStock ? 'disabled' : '' %>>
+                                <%= item.inStock ? 'Move to Cart' : 'Sold Out' %>
+                            </button>
+                        </div>
+                    <% }) %>
+                </div>
+            <% } %>
+        </div>
+    </div>
+
+    <footer class="bg-scentCharcoal text-stone-400 py-12 px-6 text-center text-sm">
+        <p>&copy; 2026 Presense E-Commerce. Built with Node.js, Express, & MongoDB.</p>
+    </footer>
+
+    <!-- SIZE PICKER MODAL -->
+    <div id="sizeModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 px-4">
+        <div class="bg-white rounded-md max-w-sm w-full p-6 relative">
+            <button id="sizeModalClose" type="button" class="absolute top-3 right-3 text-stone-400 hover:text-scentCharcoal text-lg leading-none" aria-label="Close">&times;</button>
+
+            <div class="flex items-center gap-4 mb-5">
+                <div class="w-16 h-16 rounded border border-stone-100 bg-stone-50 flex items-center justify-center shrink-0 overflow-hidden">
+                    <img id="sizeModalImage" src="" alt="" class="max-w-full max-h-full object-contain">
+                </div>
+                <div class="min-w-0">
+                    <p id="sizeModalBrand" class="text-xs uppercase tracking-wider text-stone-400 truncate"></p>
+                    <p id="sizeModalName" class="font-medium text-stone-800 truncate"></p>
+                </div>
+            </div>
+
+            <p class="text-xs uppercase tracking-widest text-stone-400 font-semibold mb-3">Select size</p>
+            <div id="sizeModalOptions" class="flex flex-wrap gap-2 mb-2"></div>
+
+            <p id="sizeModalError" class="text-xs text-red-500 mt-2 mb-3 hidden"></p>
+
+            <div class="flex gap-2 mt-4">
+                <button id="sizeModalSkip" type="button" class="hidden flex-1 py-3 rounded-sm text-[11px] font-semibold uppercase tracking-widest border border-stone-200 text-stone-500 hover:border-scentCharcoal hover:text-scentCharcoal transition-colors duration-300">
+                    Skip
+                </button>
+                <button id="sizeModalConfirm" type="button" disabled
+                        class="flex-1 py-3 rounded-sm text-[11px] font-semibold uppercase tracking-widest bg-scentCharcoal text-white hover:bg-scentAmber hover:text-scentCharcoal transition-colors duration-300 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-scentCharcoal disabled:hover:text-white">
+                    Move to Cart
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const wishlistGrid = document.getElementById('wishlistGrid');
+        const moveAllBtn = document.getElementById('moveAllBtn');
+
+        const modal = document.getElementById('sizeModal');
+        const modalImage = document.getElementById('sizeModalImage');
+        const modalBrand = document.getElementById('sizeModalBrand');
+        const modalName = document.getElementById('sizeModalName');
+        const modalOptions = document.getElementById('sizeModalOptions');
+        const modalError = document.getElementById('sizeModalError');
+        const modalConfirm = document.getElementById('sizeModalConfirm');
+        const modalSkip = document.getElementById('sizeModalSkip');
+        const modalClose = document.getElementById('sizeModalClose');
+
+        let modalQueue = [];      // remaining cards to process during "Move All"
+        let currentCard = null;
+        let selectedVariantId = null;
+        let isMoveAllMode = false;
+
+        function getVariants(card) {
+            try {
+                return JSON.parse(card.dataset.variants || '[]');
+            } catch {
+                return [];
+            }
+        }
+
+        function hasInStockVariant(card) {
+            return getVariants(card).some((v) => v.stock > 0);
+        }
+
+        function openModalForCard(card) {
+            currentCard = card;
+            selectedVariantId = null;
+            modalConfirm.disabled = true;
+            modalConfirm.textContent = 'Move to Cart';
+            modalError.classList.add('hidden');
+            modalSkip.classList.toggle('hidden', !isMoveAllMode);
+
+            modalImage.src = card.dataset.image || '';
+            modalImage.alt = card.dataset.name || '';
+            modalBrand.textContent = card.dataset.brand || '';
+            modalName.textContent = card.dataset.name || '';
+
+            const variants = getVariants(card);
+            modalOptions.innerHTML = '';
+
+            if (variants.length === 0) {
+                modalOptions.innerHTML = '<p class="text-xs text-stone-400">No sizes available for this product.</p>';
+            } else {
+                variants.forEach((v) => {
+                    const outOfStock = !v.stock || v.stock === 0;
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.textContent = v.size;
+                    btn.dataset.variantId = v.variantId;
+                    btn.disabled = outOfStock;
+                    btn.className = 'size-option-btn px-4 py-2 rounded-sm text-sm border transition-colors duration-200 ' +
+                        (outOfStock
+                            ? 'border-stone-100 text-stone-300 cursor-not-allowed'
+                            : 'border-stone-200 text-scentCharcoal hover:border-scentCharcoal');
+                    modalOptions.appendChild(btn);
+                });
+            }
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeModal() {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            currentCard = null;
+            selectedVariantId = null;
+            modalQueue = [];
+            isMoveAllMode = false;
+        }
+
+        modalOptions.addEventListener('click', (e) => {
+            const btn = e.target.closest('.size-option-btn');
+            if (!btn || btn.disabled) return;
+
+            modalOptions.querySelectorAll('.size-option-btn').forEach((b) => {
+                if (b.disabled) return;
+                b.classList.remove('border-scentCharcoal', 'bg-scentCharcoal', 'text-white');
+                b.classList.add('border-stone-200', 'text-scentCharcoal');
+            });
+
+            btn.classList.add('border-scentCharcoal', 'bg-scentCharcoal', 'text-white');
+            btn.classList.remove('border-stone-200', 'text-scentCharcoal');
+
+            selectedVariantId = btn.dataset.variantId;
+            modalConfirm.disabled = false;
+            modalError.classList.add('hidden');
+        });
+
+        modalClose.addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+
+        modalSkip.addEventListener('click', () => {
+            if (isMoveAllMode && modalQueue.length > 0) {
+                const next = modalQueue.shift();
+                openModalForCard(next);
+            } else {
+                closeModal();
+            }
+        });
+
+        async function moveCardToCart(card, variantId) {
+            const productId = card.dataset.productId;
+
+            const cartRes = await fetch('/cart', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ productId, variantId, quantity: 1 })
+            });
+
+            const cartResult = await cartRes.json().catch(() => ({}));
+            if (!cartRes.ok) {
+                throw new Error(cartResult.message || 'Could not add to cart');
+            }
+
+            const wishRes = await fetch(`/wishlist/${productId}`, {
+                method: 'DELETE',
+                headers: { 'Accept': 'application/json' },
+                credentials: 'same-origin'
+            });
+
+            if (!wishRes.ok) {
+                // Item is in the cart but couldn't be removed from the wishlist —
+                // not fatal, so just leave the card as-is rather than losing the cart add.
+                console.error('Added to cart but failed to remove from wishlist');
+                return;
+            }
+
+            card.remove();
+
+            if (wishlistGrid.children.length === 0) {
+                window.location.reload();
+            }
+        }
+
+        modalConfirm.addEventListener('click', async () => {
+            if (!currentCard || !selectedVariantId) return;
+
+            const card = currentCard;
+            modalConfirm.disabled = true;
+            modalConfirm.textContent = 'Moving...';
+            modalError.classList.add('hidden');
+
+            try {
+                await moveCardToCart(card, selectedVariantId);
+
+                if (isMoveAllMode && modalQueue.length > 0) {
+                    const next = modalQueue.shift();
+                    openModalForCard(next);
+                } else {
+                    closeModal();
+                }
+            } catch (err) {
+                modalError.textContent = err.message || 'Something went wrong';
+                modalError.classList.remove('hidden');
+                modalConfirm.disabled = false;
+                modalConfirm.textContent = 'Move to Cart';
+            }
+        });
+
+        if (wishlistGrid) {
+            wishlistGrid.addEventListener('click', async (e) => {
+                const removeBtn = e.target.closest('.remove-btn');
+                const moveBtn = e.target.closest('.move-to-cart-btn');
+
+                if (removeBtn) {
+                    const card = removeBtn.closest('.wishlist-card');
+                    const productId = card.dataset.productId;
+
+                    removeBtn.disabled = true;
+
+                    try {
+                        const response = await fetch(`/wishlist/${productId}`, {
+                            method: 'DELETE',
+                            headers: { 'Accept': 'application/json' },
+                            credentials: 'same-origin'
+                        });
+
+                        const result = await response.json();
+                        if (!response.ok) {
+                            alert(result.message || 'Could not remove item');
+                            removeBtn.disabled = false;
+                            return;
+                        }
+
+                        card.remove();
+
+                        if (wishlistGrid.children.length === 0) {
+                            window.location.reload();
+                        }
+                    } catch (err) {
+                        alert('Network error — please try again');
+                        removeBtn.disabled = false;
+                    }
+                    return;
+                }
+
+                if (moveBtn) {
+                    const card = moveBtn.closest('.wishlist-card');
+                    if (!hasInStockVariant(card)) return;
+
+                    isMoveAllMode = false;
+                    modalQueue = [];
+                    openModalForCard(card);
+                }
+            });
+        }
+
+        if (moveAllBtn) {
+            moveAllBtn.addEventListener('click', () => {
+                const cards = Array.from(wishlistGrid.querySelectorAll('.wishlist-card')).filter(hasInStockVariant);
+
+                if (cards.length === 0) {
+                    alert('None of your wishlist items are currently in stock.');
+                    return;
+                }
+
+                isMoveAllMode = true;
+                modalQueue = cards.slice(1);
+                openModalForCard(cards[0]);
+            });
+        }
+    </script>
+
+</body>
+</html>

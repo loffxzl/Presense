@@ -18,6 +18,7 @@ import userRoutes from './routes/userRoutes.js';
 import userProductListRoutes from './routes/user/productListingRouter.js'
 import userProductDetailRoutes from './routes/user/productDetailRouter.js'
 import userCartRoutes from './routes/user/cartRouter.js'
+import wishlistRoutes from './routes/user/wishlistRouter.js';
 import { adminLogout } from './controllers/auth/authController.js';
 import compression from 'compression';
 import morgan from 'morgan';
@@ -80,6 +81,7 @@ app.use('/', userRoutes);
 app.use('/products',userProductListRoutes);
 app.use('/products',userProductDetailRoutes);
 app.use('/cart',userCartRoutes);
+app.use('/wishlist', wishlistRoutes);
 
 
 app.get('/admin/logout', adminLogout);

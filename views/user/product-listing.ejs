@@ -3,242 +3,663 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Explore the Presense fragrance collection.">
     <title><%= title %> | Presense</title>
 
-    <!-- BRAND FAVICON -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='25' fill='%231A1A1A'/><text x='50%' y='68%' font-family='Georgia, serif' font-size='55' font-weight='bold' fill='%23D4AF37' text-anchor='middle'>P</text></svg>">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='25' fill='%23171717'/><text x='50%' y='68%' font-family='Georgia, serif' font-size='55' font-weight='bold' fill='%23C9A227' text-anchor='middle'>P</text></svg>">
 
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        scentCream: '#FDFBF7',
-                        scentAmber: '#D4AF37',
-                        scentCharcoal: '#1A1A1A',
+                        scentCream: '#F8F6F1',
+                        scentAmber: '#C9A227',
+                        scentCharcoal: '#171717',
                         scentEarth: '#705335'
+                    },
+                    fontFamily: {
+                        serif: ['Georgia', 'serif'],
+                        sans: ['Inter', 'system-ui', 'sans-serif']
                     }
                 }
             }
         }
     </script>
+
     <style>
-        /* Vial indicator — signature element carried over from the product card language.
-           Fill height maps to real perfume-oil concentration ranges:
-           EDT ~5-15%, EDP ~15-20%, Extrait/Parfum ~20-40%. */
+        * { box-sizing: border-box; }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            background: #F8F6F1;
+        }
+
+        ::selection {
+            background: #C9A227;
+            color: #171717;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f5f5f4;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c9c5bd;
+            border-radius: 999px;
+        }
+
+        .product-card {
+            content-visibility: auto;
+            contain-intrinsic-size: 520px;
+        }
+
+        .product-image-area {
+            background:
+                radial-gradient(
+                    circle at 50% 42%,
+                    rgba(255,255,255,.98) 0%,
+                    rgba(247,245,240,.95) 48%,
+                    rgba(235,232,225,.9) 100%
+                );
+        }
+
+        .product-card:hover .product-image-area {
+            background:
+                radial-gradient(
+                    circle at 50% 42%,
+                    rgba(255,255,255,1) 0%,
+                    rgba(250,248,244,1) 52%,
+                    rgba(236,233,226,.95) 100%
+                );
+        }
+
         .vial {
-            width: 5px;
-            height: 18px;
-            border: 1px solid #1A1A1A;
-            border-radius: 2px;
+            width: 6px;
+            height: 20px;
+            border: 1px solid #292524;
+            border-radius: 3px;
             position: relative;
             overflow: hidden;
             flex-shrink: 0;
-            background: rgba(26,26,26,0.04);
+            background: rgba(41,37,36,.04);
         }
+
         .vial-fill {
             position: absolute;
-            bottom: 0; left: 0; right: 0;
-            background: #D4AF37;
+            inset-inline: 0;
+            bottom: 0;
+            background: #C9A227;
+        }
+
+        .gold-line {
+            width: 34px;
+            height: 1px;
+            background: #C9A227;
+        }
+
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .wishlist-btn {
+            cursor: pointer;
+        }
+
+        .wishlist-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .wishlist-btn.pulse .wishlist-icon {
+            animation: wishlistPulse 0.35s ease;
+        }
+
+        @keyframes wishlistPulse {
+            0% { transform: scale(1); }
+            40% { transform: scale(1.25); }
+            100% { transform: scale(1); }
         }
 
         @media (prefers-reduced-motion: reduce) {
-            * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+            *, *::before, *::after {
+                animation-duration: .01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: .01ms !important;
+                scroll-behavior: auto !important;
+            }
         }
     </style>
 </head>
-<body class="bg-scentCream text-scentCharcoal font-sans antialiased">
 
-    <!-- NAVIGATION BAR -->
+<body class="text-scentCharcoal font-sans antialiased">
+
+    <!-- NAVIGATION -->
     <div class="sticky top-0 z-50">
         <%- include('../partials/userNavbar', { search, categoryId, sortby, minPrice, maxPrice }) %>
     </div>
 
-    <!-- Page intro strip -->
-    <header class="relative bg-stone-950 px-6 py-10 overflow-hidden">
-        <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(212,175,55,0.12)_0%,transparent_60%)] pointer-events-none"></div>
-        <div class="max-w-7xl mx-auto relative z-10 flex flex-col md:flex-row md:items-end md:justify-between gap-3">
-            <div>
-                <span class="text-xs uppercase tracking-widest text-scentAmber font-semibold block mb-2">The Collection</span>
-                <h1 class="text-2xl md:text-3xl font-serif text-white tracking-wide"><%= title %></h1>
+    <!-- COLLECTION HEADER -->
+    <header class="relative overflow-hidden bg-scentCharcoal">
+        <div class="absolute -top-40 -left-40 h-[500px] w-[500px] rounded-full bg-scentAmber/10 blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-48 right-0 h-[550px] w-[550px] rounded-full bg-white/5 blur-3xl pointer-events-none"></div>
+
+        <div class="relative max-w-[1540px] mx-auto px-5 sm:px-8 lg:px-12 py-12 lg:py-16">
+            <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8">
+                <div class="max-w-3xl">
+                    <div class="flex items-center gap-3 mb-5">
+                        <span class="gold-line"></span>
+                        <span class="text-[10px] sm:text-xs uppercase tracking-[0.28em] text-scentAmber font-semibold">
+                            The Collection
+                        </span>
+                    </div>
+
+                    <h1 class="font-serif text-4xl sm:text-5xl lg:text-6xl text-white leading-[1.05] tracking-tight">
+                        <%= title %>
+                    </h1>
+
+                    <p class="mt-5 max-w-2xl text-sm sm:text-base leading-relaxed text-stone-400">
+                        Discover fragrances selected for character, quality and lasting presence.
+                    </p>
+                </div>
+
+                <div class="lg:text-right shrink-0">
+                    <p class="font-serif text-4xl text-white">
+                        <%= totalProducts %>
+                    </p>
+                    <p class="mt-1 text-[10px] uppercase tracking-[0.22em] text-stone-500">
+                        Fragrances Found
+                    </p>
+                </div>
             </div>
-            <span class="font-mono text-xs text-stone-400"><%= totalProducts %> result<%= totalProducts === 1 ? '' : 's' %></span>
         </div>
     </header>
 
-    <div class="max-w-7xl mx-auto px-6 py-14 flex flex-col md:flex-row gap-10">
+    <!-- CATALOG -->
+    <div class="max-w-[1540px] mx-auto px-5 sm:px-8 lg:px-12 py-8 lg:py-12">
+        <div class="flex flex-col lg:flex-row gap-8 lg:gap-10">
 
-        <!-- Filters -->
-        <aside class="md:w-64 shrink-0">
-            <form id="filterForm" action="/products" method="GET" class="space-y-8 bg-white border border-stone-100 rounded-md p-6">
-                <input type="hidden" name="search" value="<%= search %>">
+            <!-- FILTERS -->
+            <aside class="lg:w-[285px] xl:w-[300px] shrink-0">
+                <form
+                    id="filterForm"
+                    action="/products"
+                    method="GET"
+                    class="bg-white border border-stone-200 rounded-xl overflow-hidden lg:sticky lg:top-28"
+                >
+                    <input type="hidden" name="search" value="<%= search %>">
 
-                <!-- Sort -->
-                <div>
-                    <label for="sortby" class="text-xs uppercase tracking-widest text-stone-400 font-semibold block mb-3">Sort by</label>
-                    <select id="sortby" name="sortby" onchange="document.getElementById('filterForm').submit()"
-                            class="w-full px-3 py-2.5 rounded-sm text-sm border border-stone-200 focus:outline-none focus:border-scentAmber">
-                        <% const currentSort = typeof sortby !== 'undefined' ? sortby : 'newest'; %>
-                        <option value="newest" <%= currentSort === 'newest' ? 'selected' : '' %>>Newest</option>
-                        <option value="lowTohigh" <%= currentSort === 'lowTohigh' ? 'selected' : '' %>>Price: low to high</option>
-                        <option value="highTolow" <%= currentSort === 'highTolow' ? 'selected' : '' %>>Price: high to low</option>
-                        <option value="a-z" <%= currentSort === 'a-z' ? 'selected' : '' %>>Name: A – Z</option>
-                        <option value="z-a" <%= currentSort === 'z-a' ? 'selected' : '' %>>Name: Z – A</option>
-                    </select>
+                    <div class="px-6 py-5 border-b border-stone-100">
+                        <div class="flex items-center justify-between gap-4">
+                            <div>
+                                <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-semibold">
+                                    Refine
+                                </p>
+                                <h2 class="mt-1 font-serif text-xl">Filters</h2>
+                            </div>
+
+                            <% if (categoryId || minPrice || maxPrice || search) { %>
+                                <a
+                                    href="/products"
+                                    class="text-[10px] uppercase tracking-[0.16em] text-stone-500 hover:text-scentAmber transition"
+                                >
+                                    Clear
+                                </a>
+                            <% } %>
+                        </div>
+                    </div>
+
+                    <!-- SORT -->
+                    <div class="px-6 py-6 border-b border-stone-100">
+                        <label
+                            for="sortby"
+                            class="block text-[10px] uppercase tracking-[0.2em] text-stone-400 font-semibold mb-3"
+                        >
+                            Sort by
+                        </label>
+
+                        <div class="relative">
+                            <select
+                                id="sortby"
+                                name="sortby"
+                                onchange="document.getElementById('filterForm').submit()"
+                                class="appearance-none w-full bg-stone-50 border border-stone-200 rounded-lg px-4 py-3 pr-10 text-sm text-stone-700 focus:outline-none focus:border-scentAmber focus:ring-1 focus:ring-scentAmber transition"
+                            >
+                                <% const currentSort = typeof sortby !== 'undefined' ? sortby : 'newest'; %>
+
+                                <option value="newest" <%= currentSort === 'newest' ? 'selected' : '' %>>Newest</option>
+                                <option value="lowTohigh" <%= currentSort === 'lowTohigh' ? 'selected' : '' %>>Price: Low to High</option>
+                                <option value="highTolow" <%= currentSort === 'highTolow' ? 'selected' : '' %>>Price: High to Low</option>
+                                <option value="a-z" <%= currentSort === 'a-z' ? 'selected' : '' %>>Name: A – Z</option>
+                                <option value="z-a" <%= currentSort === 'z-a' ? 'selected' : '' %>>Name: Z – A</option>
+                            </select>
+
+                            <span class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-stone-400">
+                                ↓
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- CATEGORY -->
+                    <div class="px-6 py-6 border-b border-stone-100">
+                        <p class="text-[10px] uppercase tracking-[0.2em] text-stone-400 font-semibold mb-4">
+                            Category
+                        </p>
+
+                        <div class="space-y-3">
+                            <label class="flex items-center gap-3 text-sm text-stone-700 cursor-pointer">
+                                <input
+                                    type="radio"
+                                    name="categoryId"
+                                    value=""
+                                    class="accent-scentAmber w-4 h-4"
+                                    onchange="document.getElementById('filterForm').submit()"
+                                    <%= !categoryId ? 'checked' : '' %>
+                                >
+                                All fragrances
+                            </label>
+
+                            <% categories.forEach((cat) => { %>
+                                <label class="flex items-center gap-3 text-sm text-stone-700 cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="categoryId"
+                                        value="<%= cat._id %>"
+                                        class="accent-scentAmber w-4 h-4"
+                                        onchange="document.getElementById('filterForm').submit()"
+                                        <%= categoryId === String(cat._id) ? 'checked' : '' %>
+                                    >
+                                    <%= cat.name %>
+                                </label>
+                            <% }) %>
+                        </div>
+                    </div>
+
+                    <!-- PRICE -->
+                    <div class="px-6 py-6">
+                        <p class="text-[10px] uppercase tracking-[0.2em] text-stone-400 font-semibold mb-4">
+                            Price range
+                        </p>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label for="minPrice" class="block text-[10px] text-stone-400 mb-1.5">
+                                    Minimum
+                                </label>
+                                <input
+                                    id="minPrice"
+                                    type="number"
+                                    name="minPrice"
+                                    min="0"
+                                    placeholder="₹ Min"
+                                    value="<%= typeof minPrice !== 'undefined' ? minPrice : '' %>"
+                                    class="w-full px-3 py-3 bg-stone-50 border border-stone-200 rounded-lg text-sm focus:outline-none focus:border-scentAmber focus:ring-1 focus:ring-scentAmber transition"
+                                >
+                            </div>
+
+                            <div>
+                                <label for="maxPrice" class="block text-[10px] text-stone-400 mb-1.5">
+                                    Maximum
+                                </label>
+                                <input
+                                    id="maxPrice"
+                                    type="number"
+                                    name="maxPrice"
+                                    min="0"
+                                    placeholder="₹ Max"
+                                    value="<%= typeof maxPrice !== 'undefined' ? maxPrice : '' %>"
+                                    class="w-full px-3 py-3 bg-stone-50 border border-stone-200 rounded-lg text-sm focus:outline-none focus:border-scentAmber focus:ring-1 focus:ring-scentAmber transition"
+                                >
+                            </div>
+                        </div>
+
+                        <button
+                            type="submit"
+                            class="w-full mt-4 py-3.5 rounded-lg bg-scentCharcoal text-white text-[10px] font-semibold uppercase tracking-[0.2em] hover:bg-scentAmber hover:text-scentCharcoal transition-all duration-300"
+                        >
+                            Apply Filters
+                        </button>
+                    </div>
+                </form>
+            </aside>
+
+            <!-- PRODUCTS -->
+            <main class="flex-1 min-w-0">
+
+                <!-- TOOLBAR -->
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-7 pb-5 border-b border-stone-200">
+                    <p class="text-sm text-stone-500">
+                        Showing
+                        <span class="font-medium text-stone-800"><%= products.length %></span>
+                        of
+                        <span class="font-medium text-stone-800"><%= totalProducts %></span>
+                        fragrances
+                    </p>
+
+                    <% if (search) { %>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] uppercase tracking-wider text-stone-400">Search</span>
+                            <span class="px-3 py-1.5 rounded-full bg-white border border-stone-200 text-xs text-stone-700">
+                                "<%= search %>"
+                            </span>
+                        </div>
+                    <% } %>
                 </div>
 
-                <!-- Category -->
-                <div class="border-t border-stone-100 pt-6">
-                    <p class="text-xs uppercase tracking-widest text-stone-400 font-semibold mb-3">Category</p>
-                    <div class="space-y-2.5">
-                        <label class="flex items-center gap-2 text-sm cursor-pointer text-scentCharcoal">
-                            <input type="radio" name="categoryId" value="" class="accent-scentAmber"
-                                   onchange="document.getElementById('filterForm').submit()"
-                                   <%= !categoryId ? 'checked' : '' %>>
-                            All fragrances
-                        </label>
-                        <% categories.forEach((cat) => { %>
-                            <label class="flex items-center gap-2 text-sm cursor-pointer text-scentCharcoal">
-                                <input type="radio" name="categoryId" value="<%= cat._id %>" class="accent-scentAmber"
-                                       onchange="document.getElementById('filterForm').submit()"
-                                       <%= categoryId === String(cat._id) ? 'checked' : '' %>>
-                                <%= cat.name %>
-                            </label>
+                <% if (products.length === 0) { %>
+
+                    <!-- EMPTY STATE -->
+                    <div class="bg-white border border-stone-200 rounded-xl min-h-[500px] flex items-center justify-center text-center px-6">
+                        <div class="max-w-md">
+                            <div class="mx-auto w-16 h-16 rounded-full bg-stone-100 flex items-center justify-center mb-6">
+                                <span class="font-serif text-xl text-stone-400">P</span>
+                            </div>
+
+                            <p class="text-[10px] uppercase tracking-[0.25em] text-scentAmber font-semibold mb-3">
+                                No Results
+                            </p>
+
+                            <h2 class="font-serif text-3xl text-stone-900 mb-3">
+                                Nothing matches yet
+                            </h2>
+
+                            <p class="text-sm text-stone-500 leading-relaxed mb-7">
+                                Try adjusting your search, changing the category,
+                                or clearing one of your filters.
+                            </p>
+
+                            <a
+                                href="/products"
+                                class="inline-flex items-center justify-center px-6 py-3 bg-scentCharcoal text-white rounded-lg text-[10px] uppercase tracking-[0.18em] font-semibold hover:bg-scentAmber hover:text-scentCharcoal transition"
+                            >
+                                View All Fragrances
+                            </a>
+                        </div>
+                    </div>
+
+                <% } else { %>
+
+                    <!-- PRODUCT GRID -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-x-5 gap-y-10">
+
+                        <% products.forEach((product) => {
+                            const variants = product.varients || [];
+                            const prices = variants.map(v => v.salePrice).filter(p => typeof p === 'number');
+                            const lowestPrice = prices.length ? Math.min(...prices) : null;
+                            const hasActiveOffer = (product.offer || []).some(
+                                o => o.isActive && new Date(o.expiryDate) > new Date()
+                            );
+                            const vialFill = product.concentration === 'Extrait de Parfum' ? 100
+                                            : product.concentration === 'Eau de Parfum' ? 62
+                                            : product.concentration === 'Eau de Toilette' ? 30
+                                            : 15;
+                            const isWishlisted = (typeof wishlistProductIds !== 'undefined')
+                                && wishlistProductIds.includes(String(product._id));
+                        %>
+
+                            <a
+                                href="/products/<%= product.slug %>"
+                                class="product-card group block rounded-xl bg-[#FCFBF8] border border-stone-200/80 p-2.5 pb-4 shadow-[0_1px_2px_rgba(23,23,23,0.02)] hover:bg-white hover:border-stone-300 hover:shadow-[0_12px_35px_rgba(23,23,23,0.07)] transition-all duration-500"
+                            >
+                                <!-- IMAGE -->
+                                <div class="product-image-area relative aspect-[4/4.5] rounded-lg overflow-hidden border border-stone-200/80 transition-all duration-500 group-hover:border-stone-300 group-hover:shadow-xl">
+
+                                    <% if (product.brand) { %>
+                                        <span class="absolute top-4 left-4 z-10 inline-flex items-center px-3 py-1.5 rounded-full bg-white/90 backdrop-blur-md border border-stone-200 text-[9px] uppercase tracking-[0.15em] font-semibold text-stone-700 shadow-sm">
+                                            <%= product.brand %>
+                                        </span>
+                                    <% } %>
+
+                                    <% if (hasActiveOffer) { %>
+                                        <span class="absolute top-4 right-14 z-10 inline-flex items-center px-3 py-1.5 rounded-full bg-scentAmber text-scentCharcoal text-[9px] uppercase tracking-[0.15em] font-bold shadow-sm">
+                                            Special Offer
+                                        </span>
+                                    <% } %>
+
+                                    <!-- WISHLIST HEART -->
+                                    <button
+                                        type="button"
+                                        class="wishlist-btn absolute top-4 right-4 z-20 w-9 h-9 rounded-full bg-white/90 backdrop-blur-md border border-stone-200 shadow-sm flex items-center justify-center hover:scale-110 transition-transform duration-200"
+                                        data-product-id="<%= product._id %>"
+                                        data-wishlisted="<%= isWishlisted %>"
+                                        aria-label="<%= isWishlisted ? 'Remove from wishlist' : 'Add to wishlist' %>"
+                                    >
+                                        <svg
+                                            class="wishlist-icon w-[18px] h-[18px] transition-colors duration-200"
+                                            viewBox="0 0 24 24"
+                                            fill="<%= isWishlisted ? '#C9A227' : 'none' %>"
+                                            stroke="<%= isWishlisted ? '#C9A227' : '#57534e' %>"
+                                            stroke-width="2"
+                                        >
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 21s-6.716-4.35-9.428-8.06C.29 9.771 1.02 5.9 4.318 4.51 6.86 3.44 9.6 4.39 12 7c2.4-2.61 5.14-3.56 7.682-2.49 3.298 1.39 4.028 5.26 1.746 8.43C18.716 16.65 12 21 12 21z"/>
+                                        </svg>
+                                    </button>
+
+                                    <div class="absolute inset-0 flex items-center justify-center p-8 sm:p-10">
+                                        <% if (product.image && product.image[0]) { %>
+                                            <img
+                                                src="<%= product.image[0] %>"
+                                                alt="<%= product.name %>"
+                                                width="600"
+                                                height="675"
+                                                loading="lazy"
+                                                decoding="async"
+                                                class="w-full h-full object-contain transition-transform duration-700 ease-out group-hover:scale-110"
+                                            >
+                                        <% } else { %>
+                                            <div class="text-center">
+                                                <div class="w-14 h-14 mx-auto mb-3 rounded-full border border-stone-200 flex items-center justify-center">
+                                                    <span class="font-serif text-stone-300">P</span>
+                                                </div>
+                                                <span class="text-xs text-stone-400">No image available</span>
+                                            </div>
+                                        <% } %>
+                                    </div>
+
+                                    <div class="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                                </div>
+
+                                <!-- DETAILS -->
+                                <div class="pt-4 px-1.5">
+                                    <% if (product.brand) { %>
+                                        <p class="text-[9px] uppercase tracking-[0.2em] text-stone-400 mb-1.5">
+                                            <%= product.brand %>
+                                        </p>
+                                    <% } %>
+
+                                    <h3 class="font-serif text-lg text-stone-900 leading-snug group-hover:text-scentAmber transition-colors duration-300">
+                                        <%= product.name %>
+                                    </h3>
+
+                                    <div class="flex items-center gap-2 mt-3">
+                                        <div class="vial">
+                                            <div class="vial-fill" style="height:<%= vialFill %>%;"></div>
+                                        </div>
+
+                                        <span class="text-[10px] uppercase tracking-[0.12em] text-stone-400">
+                                            <%= product.concentration || 'Concentration unlisted' %>
+                                        </span>
+                                    </div>
+
+                                    <div class="flex items-end justify-between gap-4 mt-4 pt-4 border-t border-stone-200">
+                                        <div>
+                                            <p class="text-[9px] uppercase tracking-[0.15em] text-stone-400 mb-1">
+                                                From
+                                            </p>
+
+                                            <% if (lowestPrice !== null) { %>
+                                                <span class="text-base font-semibold text-stone-900">
+                                                    ₹<%= lowestPrice.toLocaleString('en-IN') %>
+                                                </span>
+                                            <% } else { %>
+                                                <span class="text-xs text-stone-400">Unavailable</span>
+                                            <% } %>
+                                        </div>
+
+                                        <% if (product.rating && product.rating.count > 0) { %>
+                                            <div class="text-right">
+                                                <p class="text-[9px] uppercase tracking-[0.15em] text-stone-400 mb-1">
+                                                    Rating
+                                                </p>
+
+                                                <span class="text-xs font-medium text-stone-700">
+                                                    ★ <%= product.rating.average.toFixed(1) %>
+                                                </span>
+                                            </div>
+                                        <% } %>
+                                    </div>
+
+                                    <div class="mt-4 flex items-center gap-2 text-[9px] uppercase tracking-[0.2em] font-semibold text-stone-400 group-hover:text-scentAmber transition-colors">
+                                        <span>Discover fragrance</span>
+                                        <span class="transform group-hover:translate-x-1 transition-transform duration-300">→</span>
+                                    </div>
+                                </div>
+                            </a>
+
                         <% }) %>
                     </div>
-                </div>
 
-                <!-- Price range -->
-                <div class="border-t border-stone-100 pt-6">
-                    <p class="text-xs uppercase tracking-widest text-stone-400 font-semibold mb-3">Price range</p>
-                    <div class="flex items-center gap-2">
-                        <label for="minPrice" class="sr-only">Minimum price</label>
-                        <input id="minPrice" type="number" name="minPrice" min="0" placeholder="Min"
-                               value="<%= typeof minPrice !== 'undefined' ? minPrice : '' %>"
-                               class="w-full px-3 py-2.5 rounded-sm text-sm border border-stone-200 focus:outline-none focus:border-scentAmber">
-                        <span class="text-stone-400">–</span>
-                        <label for="maxPrice" class="sr-only">Maximum price</label>
-                        <input id="maxPrice" type="number" name="maxPrice" min="0" placeholder="Max"
-                               value="<%= typeof maxPrice !== 'undefined' ? maxPrice : '' %>"
-                               class="w-full px-3 py-2.5 rounded-sm text-sm border border-stone-200 focus:outline-none focus:border-scentAmber">
-                    </div>
-                    <button type="submit" class="w-full mt-4 py-2.5 rounded-sm text-xs font-semibold uppercase tracking-widest bg-scentCharcoal text-white hover:bg-scentAmber hover:text-scentCharcoal transition-colors duration-300">
-                        Apply
-                    </button>
-                </div>
-
-                <% if (categoryId || minPrice || maxPrice || search) { %>
-                    <a href="/products" class="block text-center text-xs uppercase tracking-widest text-scentEarth hover:text-scentAmber transition-colors duration-300 pt-2">
-                        Clear all filters
-                    </a>
                 <% } %>
-            </form>
-        </aside>
 
-        <!-- Product grid -->
-        <main class="flex-1">
-            <% if (products.length === 0) { %>
-                <div class="border border-stone-100 rounded-md py-24 text-center bg-white">
-                    <p class="font-serif text-xl mb-2">Nothing matches — yet</p>
-                    <p class="text-sm text-stone-500">Try a broader search or clear a filter.</p>
-                </div>
-            <% } else { %>
-                <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                    <% products.forEach((product) => {
-                        const variants = product.varients || [];
-                        const prices = variants.map(v => v.salePrice).filter(p => typeof p === 'number');
-                        const lowestPrice = prices.length ? Math.min(...prices) : null;
-                        const hasActiveOffer = (product.offer || []).some(o => o.isActive && new Date(o.expiryDate) > new Date());
-                        const vialFill = product.concentration === 'Extrait de Parfum' ? 100
-                                        : product.concentration === 'Eau de Parfum' ? 62
-                                        : product.concentration === 'Eau de Toilette' ? 30
-                                        : 15; // unknown/unlisted concentration
-                    %>
-                        <a href="/products/<%= product.slug %>" class="group flex flex-col transform transition-transform duration-300 hover:-translate-y-1">
-                            <div class="bg-stone-50 rounded-md p-6 h-72 flex items-center justify-center relative overflow-hidden mb-4 border border-stone-100 transition-all duration-300 group-hover:bg-stone-100/50 group-hover:shadow-md">
-                                <% if (product.brand) { %>
-                                    <span class="absolute top-3 left-3 bg-stone-900 text-white text-[10px] uppercase font-semibold px-2 py-0.5 tracking-wider rounded z-10 shadow-sm"><%= product.brand %></span>
-                                <% } %>
-                                <% if (hasActiveOffer) { %>
-                                    <span class="absolute top-3 right-3 bg-scentAmber text-scentCharcoal text-[10px] uppercase font-semibold px-2 py-0.5 tracking-wider rounded z-10 shadow-sm">Offer</span>
-                                <% } %>
-                                <% if (product.image && product.image[0]) { %>
-                                    <img src="<%= product.image[0] %>" alt="<%= product.name %>"
-                                         class="max-h-44 object-contain transform transition-transform duration-700 ease-out group-hover:scale-105">
-                                <% } else { %>
-                                    <div class="text-xs text-stone-400">No image</div>
-                                <% } %>
-                            </div>
+                <!-- PAGINATION -->
+                <% if (totalPages > 1) { %>
+                    <%
+                        const qp = (p) => `page=${p}&search=${encodeURIComponent(search || '')}&categoryId=${encodeURIComponent(categoryId || '')}&sortby=${encodeURIComponent(typeof sortby !== 'undefined' ? sortby : 'newest')}&minPrice=${minPrice || ''}&maxPrice=${maxPrice || ''}`;
 
-                            <span class="text-xs text-stone-400 uppercase tracking-wider mb-1"><%= product.brand %></span>
-                            <h3 class="font-medium text-stone-800 group-hover:text-scentAmber transition-colors duration-300 mb-2 truncate"><%= product.name %></h3>
+                        const pageTokens = [];
 
-                            <div class="flex items-center gap-2 mb-3">
-                                <div class="vial"><div class="vial-fill" style="height:<%= vialFill %>%;"></div></div>
-                                <span class="text-xs text-stone-400"><%= product.concentration || 'Concentration unlisted' %></span>
-                            </div>
-
-                            <div class="flex items-center justify-between mt-auto pt-3 border-t border-stone-100">
-                                <% if (lowestPrice !== null) { %>
-                                    <span class="text-sm font-semibold text-stone-900">$<%= lowestPrice.toLocaleString('en-IN') %></span>
-                                <% } else { %>
-                                    <span class="text-xs text-stone-400">Unavailable</span>
-                                <% } %>
-                                <% if (product.rating && product.rating.count > 0) { %>
-                                    <span class="font-mono text-xs text-stone-400">★ <%= product.rating.average.toFixed(1) %></span>
-                                <% } %>
-                            </div>
-                        </a>
-                    <% }) %>
-                </div>
-            <% } %>
-
-            <!-- Pagination -->
-            <% if (totalPages > 1) { %>
-                <%
-                    const qp = (p) => `page=${p}&search=${encodeURIComponent(search || '')}&categoryId=${encodeURIComponent(categoryId || '')}&sortby=${encodeURIComponent(typeof sortby !== 'undefined' ? sortby : 'newest')}&minPrice=${minPrice || ''}&maxPrice=${maxPrice || ''}`;
-
-                    // Windowed pagination: first, last, current-1..current+1, with '...' for gaps.
-                    const pageTokens = [];
-                    for (let i = 1; i <= totalPages; i++) {
-                        if (i === 1 || i === totalPages || Math.abs(i - currentPage) <= 1) {
-                            pageTokens.push(i);
-                        } else if (pageTokens[pageTokens.length - 1] !== '...') {
-                            pageTokens.push('...');
+                        for (let i = 1; i <= totalPages; i++) {
+                            if (i === 1 || i === totalPages || Math.abs(i - currentPage) <= 1) {
+                                pageTokens.push(i);
+                            } else if (pageTokens[pageTokens.length - 1] !== '...') {
+                                pageTokens.push('...');
+                            }
                         }
-                    }
-                %>
-                <nav aria-label="Pagination" class="flex items-center justify-center gap-2 mt-14">
-                    <% if (currentPage > 1) { %>
-                        <a href="/products?<%= qp(currentPage - 1) %>" aria-label="Previous page"
-                           class="px-3 py-1.5 rounded-sm text-sm border border-stone-200 hover:border-scentAmber transition-colors duration-300">&lt;</a>
-                    <% } %>
-                    <% pageTokens.forEach((token) => { %>
-                        <% if (token === '...') { %>
-                            <span class="px-2 text-sm text-stone-400">…</span>
-                        <% } else { %>
-                            <a href="/products?<%= qp(token) %>"
-                               <%= token === currentPage ? 'aria-current="page"' : '' %>
-                               class="px-3 py-1.5 rounded-sm text-sm transition-colors duration-300 <%= token === currentPage ? 'bg-scentCharcoal text-white' : 'border border-stone-200 hover:border-scentAmber' %>">
-                                <%= token %>
+                    %>
+
+                    <nav
+                        aria-label="Pagination"
+                        class="flex items-center justify-center gap-2 mt-16 pt-8 border-t border-stone-200"
+                    >
+                        <% if (currentPage > 1) { %>
+                            <a
+                                href="/products?<%= qp(currentPage - 1) %>"
+                                aria-label="Previous page"
+                                class="w-10 h-10 flex items-center justify-center rounded-lg border border-stone-200 bg-white text-sm text-stone-600 hover:border-scentAmber hover:text-scentAmber transition"
+                            >
+                                ←
                             </a>
                         <% } %>
-                    <% }) %>
-                    <% if (currentPage < totalPages) { %>
-                        <a href="/products?<%= qp(currentPage + 1) %>" aria-label="Next page"
-                           class="px-3 py-1.5 rounded-sm text-sm border border-stone-200 hover:border-scentAmber transition-colors duration-300">&gt;</a>
-                    <% } %>
-                </nav>
-            <% } %>
-        </main>
+
+                        <% pageTokens.forEach((token) => { %>
+                            <% if (token === '...') { %>
+                                <span class="w-10 h-10 flex items-center justify-center text-sm text-stone-400">
+                                    …
+                                </span>
+                            <% } else { %>
+                                <a
+                                    href="/products?<%= qp(token) %>"
+                                    <%= token === currentPage ? 'aria-current="page"' : '' %>
+                                    class="w-10 h-10 flex items-center justify-center rounded-lg text-sm transition <%= token === currentPage ? 'bg-scentCharcoal text-white shadow-sm' : 'bg-white border border-stone-200 text-stone-600 hover:border-scentAmber hover:text-scentAmber' %>"
+                                >
+                                    <%= token %>
+                                </a>
+                            <% } %>
+                        <% }) %>
+
+                        <% if (currentPage < totalPages) { %>
+                            <a
+                                href="/products?<%= qp(currentPage + 1) %>"
+                                aria-label="Next page"
+                                class="w-10 h-10 flex items-center justify-center rounded-lg border border-stone-200 bg-white text-sm text-stone-600 hover:border-scentAmber hover:text-scentAmber transition"
+                            >
+                                →
+                            </a>
+                        <% } %>
+                    </nav>
+                <% } %>
+
+            </main>
+        </div>
     </div>
 
-    <!-- Footer (matches homepage) -->
-    <footer class="bg-scentCharcoal text-stone-400 py-12 px-6 text-center text-sm">
-        <p>&copy; 2026 Presense E-Commerce. Built with Node.js, Express, & MongoDB.</p>
+    <!-- FOOTER -->
+    <footer class="bg-scentCharcoal text-stone-400 mt-12">
+        <div class="max-w-[1540px] mx-auto px-5 sm:px-8 lg:px-12 py-12">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-5">
+                <div class="text-center md:text-left">
+                    <p class="font-serif text-lg text-white mb-1">Presense</p>
+                    <p class="text-xs text-stone-500">
+                        Curated fragrances. Lasting presence.
+                    </p>
+                </div>
+
+                <p class="text-xs text-stone-500">
+                    &copy; 2026 Presense E-Commerce. Built with Node.js, Express & MongoDB.
+                </p>
+            </div>
+        </div>
     </footer>
+
+    <!-- WISHLIST TOGGLE -->
+    <script>
+        document.querySelectorAll('.wishlist-btn').forEach((btn) => {
+            btn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const productId = btn.dataset.productId;
+                const isWishlisted = btn.dataset.wishlisted === 'true';
+                const icon = btn.querySelector('.wishlist-icon');
+
+                btn.disabled = true;
+
+                try {
+                    let res;
+                    if (isWishlisted) {
+                        res = await fetch(`/wishlist/${productId}`, { method: 'DELETE' });
+                    } else {
+                        res = await fetch('/wishlist', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ productId })
+                        });
+                    }
+
+                    if (!res.ok) {
+                        if (res.status === 401) {
+                            window.location.href = '/login';
+                            return;
+                        }
+                        throw new Error('Wishlist request failed');
+                    }
+
+                    const data = await res.json();
+                    const nowWishlisted = data.inWishlist;
+
+                    btn.dataset.wishlisted = String(nowWishlisted);
+                    btn.setAttribute('aria-label', nowWishlisted ? 'Remove from wishlist' : 'Add to wishlist');
+                    icon.setAttribute('fill', nowWishlisted ? '#C9A227' : 'none');
+                    icon.setAttribute('stroke', nowWishlisted ? '#C9A227' : '#57534e');
+
+                    btn.classList.add('pulse');
+                    setTimeout(() => btn.classList.remove('pulse'), 350);
+                } catch (err) {
+                    console.error(err);
+                } finally {
+                    btn.disabled = false;
+                }
+            });
+        });
+    </script>
 
 </body>
 </html>

@@ -1,7 +1,8 @@
 import * as productRepository from '../../repositories/productRepository.js';
 import { NotFoundError, OutOfStockError } from '../../utils/errors.js'
+import * as wishlistRepository from '../../repositories/wishlistRepository.js';
 
-export const findProductDetail = async ({slug, sizeby, limit = 4}) => {
+export const findProductDetail = async ({slug, sizeby, limit = 4, userId}) => {
     const filter = {
         slug,
         isDeleted: {$ne: true},
@@ -26,8 +27,10 @@ export const findProductDetail = async ({slug, sizeby, limit = 4}) => {
         if (isAvailabe.stock === 0) throw new OutOfStockError(`${product.name} (${sizeby}) is currently sold out`);
     }
 
+    const wishlistProductIds = await wishlistRepository.findWishlistProductIds(userId);
+    const isWishlisted = wishlistProductIds.includes(String(product._id));
 
-    return {product, similarProduct};
+    return {product, similarProduct, isWishlisted };
 }
 
 

@@ -13,13 +13,13 @@ const findItem = (cart, productId, variantId) =>
         (i) => i.productId.toString() === String(productId) && i.variantId.toString() === String(variantId)
     );
 
-// Shapes the cart into what the view/JSON response actually needs
+
 export const getCartDetails = async (userId) => {
     const cart = await cartRepository.findCartByUser(userId);
     if (!cart || cart.items.length === 0) return { items: [], subtotal: 0 };
 
     const items = cart.items
-        .filter((item) => item.productId && !item.productId.isDeleted) // guard against removed/deleted products
+        .filter((item) => item.productId && !item.productId.isDeleted) 
         .map((item) => {
             const product = item.productId;
             const variant = product.varients.id(item.variantId);
@@ -36,7 +36,7 @@ export const getCartDetails = async (userId) => {
                 price,
                 quantity: item.quantity,
                 stock: variant ? variant.stock : 0,
-                unavailable: !variant, // size/variant no longer exists on the product
+                unavailable: !variant, 
                 lineTotal: price * item.quantity
             };
         });

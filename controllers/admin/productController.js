@@ -1,11 +1,15 @@
 import * as productService from '../../services/admin/productService.js';
 import {catchAsync} from '../../utils/catchAsync.js';
 import { getCategoryList } from '../../services/admin/categoryService.js';
+import Product from '../../models/Products.js'
 
 export const getProduct = catchAsync(async ( req, res)=>{
     const { page = 1, search = '' } = req.query;
     const data = await productService.findProducts({ page, limit:10, search});
     const categories = await getCategoryList({page : 1 , limit : 1000});
+
+    const result = await Product.find({'varients.salePrice': {$gte: 100 , $lte: 500}, status:'unlisted'});
+    console.log(result);
     
     res.render('admin/product',{
         ...data,

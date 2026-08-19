@@ -38,6 +38,14 @@
         .zoom-container img { transition: transform 0.1s ease-out; }
         .zoom-container.zoomed img { cursor: zoom-out; }
 
+        .wishlist-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .wishlist-btn.pulse #wishlistIcon { animation: wishlistPulse 0.35s ease; }
+        @keyframes wishlistPulse {
+            0% { transform: scale(1); }
+            40% { transform: scale(1.25); }
+            100% { transform: scale(1); }
+        }
+
         @media (prefers-reduced-motion: reduce) {
             * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
         }
@@ -93,8 +101,33 @@
 
             <!-- Details -->
             <div>
-                <span class="text-xs uppercase tracking-widest text-stone-400 font-semibold"><%= product.brand %></span>
-                <h1 class="font-serif text-3xl mt-2 mb-3"><%= product.name %></h1>
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <span class="text-xs uppercase tracking-widest text-stone-400 font-semibold"><%= product.brand %></span>
+                        <h1 class="font-serif text-3xl mt-2 mb-3"><%= product.name %></h1>
+                    </div>
+
+                    <!-- WISHLIST HEART -->
+                    <button
+                        type="button"
+                        id="wishlistBtn"
+                        class="wishlist-btn shrink-0 w-11 h-11 rounded-full bg-white border border-stone-200 shadow-sm flex items-center justify-center hover:scale-110 transition-transform duration-200 mt-1"
+                        data-product-id="<%= product._id %>"
+                        data-wishlisted="<%= isWishlisted %>"
+                        aria-label="<%= isWishlisted ? 'Remove from wishlist' : 'Add to wishlist' %>"
+                    >
+                        <svg
+                            id="wishlistIcon"
+                            class="w-5 h-5 transition-colors duration-200"
+                            viewBox="0 0 24 24"
+                            fill="<%= isWishlisted ? '#FF0000' : 'none' %>"
+                            stroke="<%= isWishlisted ? '#FF0000' : '#57534e' %>"
+                            stroke-width="2"
+                        >
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 21s-6.716-4.35-9.428-8.06C.29 9.771 1.02 5.9 4.318 4.51 6.86 3.44 9.6 4.39 12 7c2.4-2.61 5.14-3.56 7.682-2.49 3.298 1.39 4.028 5.26 1.746 8.43C18.716 16.65 12 21 12 21z"/>
+                        </svg>
+                    </button>
+                </div>
 
                 <!-- Ratings -->
                 <div class="flex items-center gap-2 mb-4">
@@ -426,6 +459,54 @@
             container.addEventListener('mouseleave', () => {
                 img.style.transform = 'scale(1)';
                 container.classList.remove('zoomed');
+            });
+        })();
+
+        // --- Wishlist toggle ---
+        (function() {
+            const btn = document.getElementById('wishlistBtn');
+            const icon = document.getElementById('wishlistIcon');
+            if (!btn || !icon) return;
+
+            btn.addEventListener('click', async () => {
+                const isWishlisted = btn.dataset.wishlisted === 'true';
+                btn.disabled = true;
+
+                try {
+                    let res;
+                    if (isWishlisted) {
+                        res = await fetch(`/wishlist/${productId}`, { method: 'DELETE' });
+                    } else {
+                        res = await fetch('/wishlist', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ productId })
+                        });
+                    }
+
+                    if (!res.ok) {
+                        if (res.status === 401) {
+                            window.location.href = '/login';
+                            return;
+                        }
+                        throw new Error('Wishlist request failed');
+                    }
+
+                    const data = await res.json();
+                    const nowWishlisted = data.inWishlist;
+
+                    btn.dataset.wishlisted = String(nowWishlisted);
+                    btn.setAttribute('aria-label', nowWishlisted ? 'Remove from wishlist' : 'Add to wishlist');
+                    icon.setAttribute('fill', nowWishlisted ? '#FF0000' : 'none');
+                    icon.setAttribute('stroke', nowWishlisted ? '#FF0000' : '#57534e');
+
+                    btn.classList.add('pulse');
+                    setTimeout(() => btn.classList.remove('pulse'), 350);
+                } catch (err) {
+                    console.error(err);
+                } finally {
+                    btn.disabled = false;
+                }
             });
         })();
     </script>

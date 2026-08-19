@@ -1,10 +1,9 @@
 import * as productRepository from '../../repositories/productRepository.js';
 import { ProductFilter, SORT_OPTIONS} from '../../validators/user/productFilters.js'
+import * as wishlistRepository from '../../repositories/wishlistRepository.js';
 
 
-// Filters (Category, Price range, not included Brand optional)
-// Sorting options (Price low to high, high to low, A-Z, Z-A)
-export const listProduct = async ({page = 1, limit = 10, search = '', categoryId = '',sortby = "newest", minPrice , maxPrice } = {}) => {
+export const listProduct = async ({page = 1, limit = 10, search = '', categoryId = '',sortby = "newest", minPrice , maxPrice, userId } = {}) => {
 
     const filter = ProductFilter({search, categoryId, minPrice, maxPrice});
     const sort = SORT_OPTIONS[sortby] || SORT_OPTIONS.newest
@@ -13,12 +12,13 @@ export const listProduct = async ({page = 1, limit = 10, search = '', categoryId
     const skip = (currentPage - 1) * limit;
     
 
-    const [ products , totalProducts ] = await Promise.all([
+    const [ products , totalProducts, wishlistProductIds ] = await Promise.all([
         productRepository.findProduct({filter,sort,skip,limit}),
-        productRepository.countProduct(filter)
+        productRepository.countProduct(filter),
+        wishlistRepository.findWishlistProductIds(userId)
     ]);
 
     const totalPages = Math.ceil(totalProducts/limit);
     
-    return { products, totalProducts, totalPages, currentPage, search};
+    return { products, totalProducts, totalPages, currentPage, search, wishlistProductIds};
 };
