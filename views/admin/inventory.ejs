@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> | Presense Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .font-serif { font-family: Georgia, Cambria, "Times New Roman", Times, serif; }
+        .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:100; display:none; align-items:center; justify-content:center; padding:16px; }
+        .modal-overlay.show { display:flex; }
+        .modal-box { background:#fff; border-radius:16px; padding:32px; width:100%; max-width:480px; max-height:85vh; overflow-y:auto; }
+    </style>
+</head>
+<body class="bg-gray-50 flex min-h-screen">
+
+    <%- include('../partials/adminSidebar', { adminName, activePage: 'inventory' }) %>
+
+    <main class="flex-1 ml-64 p-8">
+        <div class="mb-6">
+            <h2 class="text-2xl font-bold">Inventory Management</h2>
+            <p class="text-gray-400 text-sm mt-1">Total: <%= totalVariants %> variants</p>
+        </div>
+
+        <form action="/admin/inventory" method="GET" class="flex gap-3 mb-6 flex-wrap items-center">
+            <input type="text" name="search" value="<%= search %>"
+                   placeholder="Search by product, brand, or size..."
+                   class="border p-2 rounded-lg flex-1 min-w-[240px] text-sm focus:outline-none focus:border-gray-400"/>
+
+            <label class="flex items-center gap-2 text-sm text-gray-600 border rounded-lg px-3 py-2 cursor-pointer">
+                <input type="checkbox" name="lowStockOnly" value="true" <%= lowStockOnly ? 'checked' : '' %>>
+                Low stock only (&le; <%= lowStockThreshold %>)
+            </label>
+
+            <button type="submit" class="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-700 transition">
+                Filter
+            </button>
+            <% if (search || lowStockOnly) { %>
+                <a href="/admin/inventory" class="border px-4 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition">
+                    Clear
+                </a>
+            <% } %>
+        </form>
+
+        <% if (variants.length === 0) { %>
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm py-16 text-center text-gray-400 text-sm">
+                No matching variants found
+            </div>
+        <% } else { %>
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="bg-gray-50 border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-500">
+                            <th class="px-5 py-3 font-semibold">Product</th>
+                            <th class="px-5 py-3 font-semibold">Brand</th>
+                            <th class="px-5 py-3 font-semibold">Size</th>
+                            <th class="px-5 py-3 font-semibold">Stock</th>
+                            <th class="px-5 py-3 font-semibold">Price</th>
+                            <th class="px-5 py-3 font-semibold"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% variants.forEach((v) => { %>
+                            <tr class="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition">
+                                <td class="px-5 py-3">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-md bg-gray-100 overflow-hidden shrink-0">
+                                            <% if (v.image) { %>
+                                                <img src="<%= v.image %>" alt="<%= v.name %>" class="w-full h-full object-cover">
+                                            <% } %>
+                                        </div>
+                                        <span class="font-medium text-gray-900 truncate max-w-[200px]"><%= v.name %></span>
+                                    </div>
+                                </td>
+                                <td class="px-5 py-3 text-gray-500"><%= v.brandName || '—' %></td>
+                                <td class="px-5 py-3 text-gray-500"><%= v.size %></td>
+                                <td class="px-5 py-3">
+                                    <span class="font-semibold <%= v.stock <= lowStockThreshold ? 'text-red-600' : 'text-gray-900' %>">
+                                        <%= v.stock %>
+                                    </span>
+                                    <% if (v.stock <= lowStockThreshold) { %>
+                                        <span class="ml-1.5 text-[10px] font-semibold uppercase text-red-500">Low</span>
+                                    <% } %>
+                                </td>
+                                <td class="px-5 py-3 text-gray-500">&#8377;<%= v.salePrice %></td>
+                                <td class="px-5 py-3 text-right">
+                                    <div class="flex gap-2 justify-end">
+                                        <button onclick="openAdjustModal('<%= v.productId %>', '<%= v.variantId %>', '<%= v.name %>', '<%= v.size %>', <%= v.stock %>)"
+                                                class="text-xs font-medium px-3 py-1.5 rounded-md border border-gray-200 text-gray-700 hover:bg-gray-50 transition">
+                                            Adjust
+                                        </button>
+                                        <button onclick="openHistoryModal('<%= v.productId %>', '<%= v.variantId %>', '<%= v.name %>', '<%= v.size %>')"
+                                                class="text-xs font-medium px-3 py-1.5 rounded-md border border-gray-200 text-gray-700 hover:bg-gray-50 transition">
+                                            History
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        <% } %>
+
+        <% if (totalPages > 1) { %>
+            <div class="flex items-center gap-2 mt-6">
+                <% if (currentPage > 1) { %>
+                    <a href="/admin/inventory?page=<%= currentPage - 1 %>&search=<%= search %>&lowStockOnly=<%= lowStockOnly %>"
+                       class="px-3 py-1 rounded bg-gray-200 text-gray-700 text-sm hover:bg-gray-300 transition">&lt;</a>
+                <% } %>
+                <% for (let i = 1; i <= totalPages; i++) { %>
+                    <a href="/admin/inventory?page=<%= i %>&search=<%= search %>&lowStockOnly=<%= lowStockOnly %>"
+                       class="px-3 py-1 rounded text-sm transition
+                           <%= i === currentPage ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300' %>">
+                        <%= i %>
+                    </a>
+                <% } %>
+                <% if (currentPage < totalPages) { %>
+                    <a href="/admin/inventory?page=<%= currentPage + 1 %>&search=<%= search %>&lowStockOnly=<%= lowStockOnly %>"
+                       class="px-3 py-1 rounded bg-gray-200 text-gray-700 text-sm hover:bg-gray-300 transition">&gt;</a>
+                <% } %>
+            </div>
+        <% } %>
+    </main>
+
+    <!-- Adjust Stock Modal -->
+    <div id="adjustModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="font-serif text-xl font-bold text-gray-900">Adjust Stock</h2>
+                <button onclick="closeAdjustModal()" type="button" class="text-gray-400 hover:text-gray-600">✕</button>
+            </div>
+
+            <p class="text-sm text-gray-600 mb-1" id="adjustProductLabel"></p>
+            <p class="text-xs text-gray-400 mb-4">Current stock: <span id="adjustCurrentStock" class="font-semibold text-gray-700"></span></p>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 uppercase mb-2">Direction</label>
+                    <div class="flex gap-2">
+                        <button type="button" id="dirAdd" onclick="setDirection('add')"
+                                class="flex-1 py-2 rounded-lg text-sm font-semibold border border-gray-900 bg-gray-900 text-white transition">
+                            + Add Stock
+                        </button>
+                        <button type="button" id="dirRemove" onclick="setDirection('remove')"
+                                class="flex-1 py-2 rounded-lg text-sm font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50 transition">
+                            − Remove Stock
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 uppercase mb-2">Quantity</label>
+                    <input type="number" id="adjustQuantity" min="1" value="1"
+                           class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none text-sm">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 uppercase mb-2">Note</label>
+                    <textarea id="adjustNote" rows="2"
+                              class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none text-sm resize-none"
+                              placeholder="Reason for this adjustment (e.g. damaged stock, recount, new delivery)"></textarea>
+                </div>
+            </div>
+
+            <p class="text-red-500 text-xs mt-3 hidden" id="adjustError"></p>
+
+            <div class="flex gap-3 mt-6">
+                <button type="button" onclick="submitAdjustment()"
+                        class="flex-1 bg-gray-900 text-white py-3 rounded-lg text-sm font-semibold hover:bg-yellow-600 transition">
+                    Save
+                </button>
+                <button type="button" onclick="closeAdjustModal()"
+                        class="px-6 py-3 rounded-lg text-sm font-semibold border border-gray-200 text-gray-500 hover:bg-gray-50 transition">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Modal -->
+    <div id="historyModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="font-serif text-xl font-bold text-gray-900">Stock History</h2>
+                <button onclick="closeHistoryModal()" type="button" class="text-gray-400 hover:text-gray-600">✕</button>
+            </div>
+            <p class="text-sm text-gray-600 mb-4" id="historyProductLabel"></p>
+            <div id="historyList" class="space-y-3 text-sm">
+                <p class="text-gray-400 text-xs">Loading...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Adjust Stock modal ---
+        let currentProductId = null;
+        let currentVariantId = null;
+        let currentDirection = 'add';
+
+        function setDirection(dir) {
+            currentDirection = dir;
+            const addBtn = document.getElementById('dirAdd');
+            const removeBtn = document.getElementById('dirRemove');
+
+            if (dir === 'add') {
+                addBtn.className = 'flex-1 py-2 rounded-lg text-sm font-semibold border border-gray-900 bg-gray-900 text-white transition';
+                removeBtn.className = 'flex-1 py-2 rounded-lg text-sm font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50 transition';
+            } else {
+                removeBtn.className = 'flex-1 py-2 rounded-lg text-sm font-semibold border border-gray-900 bg-gray-900 text-white transition';
+                addBtn.className = 'flex-1 py-2 rounded-lg text-sm font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50 transition';
+            }
+        }
+
+        function openAdjustModal(productId, variantId, name, size, stock) {
+            currentProductId = productId;
+            currentVariantId = variantId;
+            setDirection('add');
+
+            document.getElementById('adjustProductLabel').textContent = `${name} — ${size}`;
+            document.getElementById('adjustCurrentStock').textContent = stock;
+            document.getElementById('adjustQuantity').value = 1;
+            document.getElementById('adjustNote').value = '';
+            document.getElementById('adjustError').classList.add('hidden');
+
+            document.getElementById('adjustModal').classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeAdjustModal() {
+            document.getElementById('adjustModal').classList.remove('show');
+            document.body.style.overflow = '';
+        }
+
+        document.getElementById('adjustModal').addEventListener('click', function (e) {
+            if (e.target === this) closeAdjustModal();
+        });
+
+        async function submitAdjustment() {
+            const errorEl = document.getElementById('adjustError');
+            errorEl.classList.add('hidden');
+
+            const quantity = parseInt(document.getElementById('adjustQuantity').value);
+            if (!quantity || quantity <= 0) {
+                errorEl.textContent = 'Enter a quantity greater than 0';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+
+            const delta = currentDirection === 'add' ? quantity : -quantity;
+            const note = document.getElementById('adjustNote').value.trim();
+
+            try {
+                const res = await fetch(`/admin/inventory/${currentProductId}/${currentVariantId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ delta, note })
+                });
+                const result = await res.json();
+
+                if (!res.ok) {
+                    errorEl.textContent = result.message || 'Could not adjust stock';
+                    errorEl.classList.remove('hidden');
+                    return;
+                }
+
+                window.location.reload();
+            } catch (err) {
+                errorEl.textContent = 'Network error — please try again';
+                errorEl.classList.remove('hidden');
+            }
+        }
+
+        // --- History modal ---
+        async function openHistoryModal(productId, variantId, name, size) {
+            document.getElementById('historyProductLabel').textContent = `${name} — ${size}`;
+            document.getElementById('historyList').innerHTML = '<p class="text-gray-400 text-xs">Loading...</p>';
+            document.getElementById('historyModal').classList.add('show');
+            document.body.style.overflow = 'hidden';
+
+            try {
+                const res = await fetch(`/admin/inventory/${productId}/${variantId}/logs`, {
+                    headers: { 'Accept': 'application/json' },
+                    credentials: 'same-origin'
+                });
+                const result = await res.json();
+                renderHistory(result.logs || []);
+            } catch (err) {
+                document.getElementById('historyList').innerHTML = '<p class="text-red-500 text-xs">Could not load history</p>';
+            }
+        }
+
+        function renderHistory(logs) {
+            const list = document.getElementById('historyList');
+            if (logs.length === 0) {
+                list.innerHTML = '<p class="text-gray-400 text-xs">No stock changes recorded yet</p>';
+                return;
+            }
+
+            list.innerHTML = logs.map((log) => {
+                const sign = log.quantityChange > 0 ? '+' : '';
+                const color = log.quantityChange > 0 ? 'text-green-600' : 'text-red-600';
+                const by = log.performedBy ? log.performedBy.name : 'System';
+                const date = new Date(log.createdAt).toLocaleString('en-IN');
+
+                return `
+                    <div class="border-b border-gray-100 last:border-0 pb-3">
+                        <div class="flex justify-between items-start">
+                            <span class="text-xs font-semibold uppercase text-gray-500">${log.type}</span>
+                            <span class="text-sm font-semibold ${color}">${sign}${log.quantityChange}</span>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-0.5">${log.previousStock} → ${log.newStock} &middot; by ${by}</p>
+                        ${log.note ? `<p class="text-xs text-gray-500 mt-1">${log.note}</p>` : ''}
+                        <p class="text-[10px] text-gray-300 mt-1">${date}</p>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function closeHistoryModal() {
+            document.getElementById('historyModal').classList.remove('show');
+            document.body.style.overflow = '';
+        }
+
+        document.getElementById('historyModal').addEventListener('click', function (e) {
+            if (e.target === this) closeHistoryModal();
+        });
+    </script>
+
+</body>
+</html>

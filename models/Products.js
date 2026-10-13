@@ -24,7 +24,7 @@ const productSchema = new mongoose.Schema({
     slug: { type: String, required: true, lowercase: true, trim: true},
     productCode: { type: String, required: true, trim: true},
     description: { type: String, trim: true},
-    brand: {type: String, required: true, trim: true},
+    brandId: { type: mongoose.Schema.Types.ObjectId, ref: 'Brand', required: true },
     image: [{ type: String}],
     isDeleted:{ type:Boolean , default:false },
     categoryId: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true },
@@ -43,4 +43,4 @@ const productSchema = new mongoose.Schema({
 productSchema.index({ slug: 1 }, { unique: true, partialFilterExpression: { isDeleted: { $ne: true } } });
 productSchema.index({ productCode: 1 }, { unique: true, partialFilterExpression: { isDeleted: { $ne: true } } });
 
-export default mongoose.model('Product', productSchema); 
+export default mongoose.model('Product', productSchema);

@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> | Presense</title>
+
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='25' fill='%23171717'/><text x='50%' y='68%' font-family='Georgia, serif' font-size='55' font-weight='bold' fill='%23C9A227' text-anchor='middle'>P</text></svg>">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        scentCream: '#F8F6F1',
+                        scentAmber: '#C9A227',
+                        scentCharcoal: '#171717',
+                        scentEarth: '#705335'
+                    },
+                    fontFamily: {
+                        serif: ['Georgia', 'serif'],
+                        sans: ['Inter', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        * { box-sizing: border-box; }
+        body { background: #F8F6F1; }
+        ::selection { background: #C9A227; color: #171717; }
+
+        .modal-overlay { position:fixed; inset:0; background:rgba(23,23,23,0.55); z-index:100; display:none; align-items:center; justify-content:center; padding:16px; }
+        .modal-overlay.show { display:flex; }
+
+        .char-count.near-limit { color: #B91C1C; }
+    </style>
+</head>
+<body class="text-scentCharcoal font-sans antialiased">
+
+    <div class="sticky top-0 z-50">
+        <%- include('../partials/userNavbar') %>
+    </div>
+
+    <!-- HERO -->
+    <header class="relative overflow-hidden bg-scentCharcoal">
+        <div class="absolute -top-40 -left-40 h-[500px] w-[500px] rounded-full bg-scentAmber/10 blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-48 right-0 h-[550px] w-[550px] rounded-full bg-white/5 blur-3xl pointer-events-none"></div>
+
+        <div class="relative max-w-[900px] mx-auto px-5 sm:px-8 lg:px-12 py-12 lg:py-14">
+            <a href="/orders" class="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-stone-400 hover:text-scentAmber transition mb-6">
+                ← Back to orders
+            </a>
+
+            <div class="flex items-start justify-between gap-4 flex-wrap">
+                <div>
+                    <div class="flex items-center gap-3 mb-3">
+                        <span class="w-[34px] h-px bg-scentAmber"></span>
+                        <span class="text-[10px] sm:text-xs uppercase tracking-[0.28em] text-scentAmber font-semibold">Order Details</span>
+                    </div>
+                    <h1 class="font-serif text-3xl sm:text-4xl text-white leading-[1.05] tracking-tight">
+                        Order <%= order.orderCode %>
+                    </h1>
+                    <p class="mt-3 text-sm text-stone-400">
+                        Placed on <%= new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) %>
+                    </p>
+                </div>
+
+                <%
+                    const isFinal = ['delivered', 'refunded'].includes(order.status);
+                    const isProblem = ['cancelled', 'return_rejected'].includes(order.status);
+                    const isReturnFlow = order.status.startsWith('return') && !isProblem;
+                    const statusClasses = isFinal
+                        ? 'border-emerald-500 text-emerald-300 bg-emerald-500/10'
+                        : isProblem
+                            ? 'border-red-400 text-red-300 bg-red-500/10'
+                            : isReturnFlow
+                                ? 'border-scentAmber text-scentAmber bg-scentAmber/10'
+                                : 'border-stone-500 text-stone-300 bg-white/5';
+                %>
+                <span class="inline-flex items-center px-4 py-2 rounded-full border text-[10px] uppercase tracking-[0.15em] font-semibold <%= statusClasses %>">
+                    <%= order.status.replace('_', ' ') %>
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-[900px] mx-auto px-5 sm:px-8 lg:px-12 py-10 lg:py-14">
+
+        <!-- ACTIONS -->
+        <div class="flex flex-wrap gap-3 mb-10">
+            <a href="/orders/<%= order._id %>/invoice"
+               class="px-5 py-2.5 rounded-lg border border-stone-200 bg-white text-[10px] uppercase tracking-[0.15em] font-semibold text-stone-600 hover:border-scentAmber hover:text-scentAmber transition">
+                Download invoice
+            </a>
+            <% if (['pending', 'confirmed'].includes(order.status)) { %>
+                <button type="button" id="cancelOrderBtn"
+                        class="px-5 py-2.5 rounded-lg border border-red-300 bg-white text-[10px] uppercase tracking-[0.15em] font-semibold text-red-600 hover:bg-red-50 transition">
+                    Cancel order
+                </button>
+            <% } %>
+            <% if (order.status === 'delivered') { %>
+                <button type="button" id="returnOrderBtn"
+                        class="px-5 py-2.5 rounded-lg border border-red-300 bg-white text-[10px] uppercase tracking-[0.15em] font-semibold text-red-600 hover:bg-red-50 transition">
+                    Return order
+                </button>
+            <% } %>
+        </div>
+
+        <!-- ITEMS -->
+        <section class="bg-white border border-stone-200 rounded-xl p-6 sm:p-7 mb-6">
+            <p class="text-[10px] uppercase tracking-[0.2em] text-stone-400 font-semibold mb-5">Items</p>
+
+            <div class="divide-y divide-stone-100">
+                <% order.items.forEach((item) => { %>
+                    <div class="flex gap-4 items-center py-4 first:pt-0 last:pb-0"
+                         data-product-id="<%= item.productId %>" data-variant-id="<%= item.variantId %>">
+                        <div class="w-16 h-16 rounded-lg bg-stone-50 border border-stone-200 overflow-hidden shrink-0 flex items-center justify-center <%= item.status !== 'active' ? 'opacity-40' : '' %>">
+                            <% if (item.image) { %>
+                                <img src="<%= item.image %>" alt="<%= item.name %>" class="w-full h-full object-cover">
+                            <% } else { %>
+                                <span class="font-serif text-stone-300">P</span>
+                            <% } %>
+                        </div>
+
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <p class="text-sm font-medium text-stone-900 <%= item.status !== 'active' ? 'line-through text-stone-400' : '' %>">
+                                    <%= item.name %>
+                                </p>
+                                <% if (item.status !== 'active') { %>
+                                    <span class="text-[9px] uppercase tracking-[0.1em] font-semibold text-red-500 border border-red-300 rounded-full px-2 py-0.5">
+                                        <%= item.status %>
+                                    </span>
+                                <% } %>
+                            </div>
+                            <p class="text-xs text-stone-400 mt-1"><%= item.brand %> &middot; <%= item.size %> &middot; Qty <%= item.quantity %></p>
+
+                            <% if (item.status === 'active' && ['pending', 'confirmed'].includes(order.status)) { %>
+                                <button type="button" class="item-cancel-btn mt-1.5 text-[10px] uppercase tracking-[0.1em] text-stone-400 hover:text-red-500 border-b border-stone-300 hover:border-red-400 transition">
+                                    Cancel this item
+                                </button>
+                            <% } %>
+                        </div>
+
+                        <span class="text-sm font-semibold text-stone-900 shrink-0">₹<%= item.lineTotal.toLocaleString('en-IN') %></span>
+                    </div>
+                <% }) %>
+            </div>
+
+            <div class="mt-6 pt-5 border-t border-stone-200 space-y-2">
+                <div class="flex justify-between text-sm text-stone-500">
+                    <span>Subtotal</span><span class="font-medium text-stone-700">₹<%= order.pricing.subtotal.toLocaleString('en-IN') %></span>
+                </div>
+                <div class="flex justify-between text-sm text-stone-500">
+                    <span>Tax</span><span class="font-medium text-stone-700">₹<%= order.pricing.tax.toLocaleString('en-IN') %></span>
+                </div>
+                <% if (order.pricing.discount > 0) { %>
+                    <div class="flex justify-between text-sm text-emerald-600">
+                        <span>Discount<% if (order.couponCode) { %> (<%= order.couponCode %>)<% } %></span>
+                        <span class="font-medium">−₹<%= order.pricing.discount.toLocaleString('en-IN') %></span>
+                    </div>
+                <% } %>
+                <div class="flex justify-between text-sm text-stone-500">
+                    <span>Shipping</span>
+                    <span class="font-medium text-stone-700"><%= order.pricing.shippingFee === 0 ? 'Free' : '₹' + order.pricing.shippingFee.toLocaleString('en-IN') %></span>
+                </div>
+                <div class="flex justify-between items-baseline pt-3 mt-2 border-t border-stone-200">
+                    <span class="text-sm font-semibold text-stone-900">Total (as charged)</span>
+                    <span class="font-serif text-xl text-stone-900">₹<%= order.pricing.total.toLocaleString('en-IN') %></span>
+                </div>
+                <% if (activeSubtotal !== order.pricing.subtotal) { %>
+                    <p class="text-xs text-stone-400 pt-1">Active items subtotal after cancellations: ₹<%= activeSubtotal.toLocaleString('en-IN') %></p>
+                <% } %>
+            </div>
+        </section>
+
+        <div class="grid sm:grid-cols-2 gap-6 mb-6">
+            <!-- ADDRESS -->
+            <section class="bg-white border border-stone-200 rounded-xl p-6 sm:p-7">
+                <p class="text-[10px] uppercase tracking-[0.2em] text-stone-400 font-semibold mb-4">Delivery address</p>
+                <div class="text-sm text-stone-600 leading-relaxed">
+                    <p class="font-medium text-stone-900"><%= order.shippingAddress.fullName %></p>
+                    <p><%= order.shippingAddress.line1 %><% if (order.shippingAddress.line2) { %>, <%= order.shippingAddress.line2 %><% } %></p>
+                    <p><%= order.shippingAddress.city %>, <%= order.shippingAddress.state %> — <%= order.shippingAddress.pincode %></p>
+                    <p><%= order.shippingAddress.country %></p>
+                    <p class="mt-2 text-stone-500"><%= order.shippingAddress.phone %></p>
+                </div>
+            </section>
+
+            <!-- PAYMENT -->
+            <section class="bg-white border border-stone-200 rounded-xl p-6 sm:p-7">
+                <p class="text-[10px] uppercase tracking-[0.2em] text-stone-400 font-semibold mb-4">Payment</p>
+                <p class="text-sm text-stone-600">Cash on Delivery</p>
+            </section>
+        </div>
+
+        <a href="/products" class="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] font-semibold text-stone-500 hover:text-scentAmber transition">
+            Continue shopping <span>→</span>
+        </a>
+    </main>
+
+    <footer class="bg-scentCharcoal text-stone-400 mt-12">
+        <div class="max-w-[1540px] mx-auto px-5 sm:px-8 lg:px-12 py-12">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-5">
+                <div class="text-center md:text-left">
+                    <p class="font-serif text-lg text-white mb-1">Presense</p>
+                    <p class="text-xs text-stone-500">Curated fragrances. Lasting presence.</p>
+                </div>
+                <p class="text-xs text-stone-500">&copy; 2026 Presense E-Commerce. Built with Node.js, Express & MongoDB.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Reason modal — shared by cancel-order, cancel-item, and return flows -->
+    <div id="reasonModal" class="modal-overlay">
+        <div class="bg-white rounded-xl p-6 sm:p-7 w-full max-w-[420px]">
+            <h3 id="reasonModalTitle" class="font-serif text-xl text-stone-900 mb-1.5">Cancel order</h3>
+            <p class="hint text-xs text-stone-500 mb-4" id="reasonModalHint">Reason is optional.</p>
+
+            <textarea id="reasonInput" maxlength="500" placeholder="Optional — let us know why"
+                      class="w-full min-h-[100px] px-4 py-3 bg-stone-50 border border-stone-200 rounded-lg text-sm focus:outline-none focus:border-scentAmber focus:ring-1 focus:ring-scentAmber transition resize-y"></textarea>
+            <p class="char-count text-[11px] text-stone-400 text-right mt-1" id="charCount">0 / 500</p>
+            <p class="modal-error text-xs text-red-500 mt-1 min-h-[16px]" id="reasonModalError"></p>
+
+            <div class="flex gap-3 mt-5">
+                <button type="button" id="reasonConfirmBtn"
+                        class="flex-1 py-3 rounded-lg bg-red-600 text-white text-[10px] font-semibold uppercase tracking-[0.15em] hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                    Confirm
+                </button>
+                <button type="button" id="reasonCancelBtn"
+                        class="flex-1 py-3 rounded-lg border border-stone-200 text-[10px] font-semibold uppercase tracking-[0.15em] text-stone-500 hover:bg-stone-50 transition">
+                    Back
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const orderId = '<%= order._id %>';
+        const reasonModal = document.getElementById('reasonModal');
+        const reasonInput = document.getElementById('reasonInput');
+        const reasonModalTitle = document.getElementById('reasonModalTitle');
+        const reasonModalHint = document.getElementById('reasonModalHint');
+        const reasonModalError = document.getElementById('reasonModalError');
+        const reasonConfirmBtn = document.getElementById('reasonConfirmBtn');
+        const charCount = document.getElementById('charCount');
+
+        const REASON_MAX_LENGTH = 500;
+        const REASON_MIN_LENGTH = 3; // only enforced when a reason is required
+
+        let pendingAction = null; // { url, method, reasonRequired }
+        let isSubmitting = false;
+
+        function openReasonModal({ title, hint, reasonRequired, url, method }) {
+            reasonModalTitle.textContent = title;
+            reasonModalHint.textContent = hint;
+            reasonInput.value = '';
+            reasonModalError.textContent = '';
+            pendingAction = { url, method, reasonRequired };
+            isSubmitting = false;
+            updateCharCount();
+            reasonModal.classList.add('show');
+            reasonInput.focus();
+        }
+
+        function closeReasonModal() {
+            reasonModal.classList.remove('show');
+            pendingAction = null;
+        }
+
+        function updateCharCount() {
+            const len = reasonInput.value.length;
+            charCount.textContent = `${len} / ${REASON_MAX_LENGTH}`;
+            charCount.classList.toggle('near-limit', len >= REASON_MAX_LENGTH - 20);
+        }
+
+        reasonInput.addEventListener('input', () => {
+            updateCharCount();
+            if (reasonModalError.textContent) reasonModalError.textContent = '';
+        });
+
+        document.getElementById('reasonCancelBtn').addEventListener('click', closeReasonModal);
+        reasonModal.addEventListener('click', (e) => { if (e.target === reasonModal) closeReasonModal(); });
+
+        reasonConfirmBtn.addEventListener('click', async () => {
+            if (!pendingAction || isSubmitting) return;
+            const reason = reasonInput.value.trim();
+
+            if (pendingAction.reasonRequired) {
+                if (!reason) {
+                    reasonModalError.textContent = 'A reason is required.';
+                    return;
+                }
+                if (reason.length < REASON_MIN_LENGTH) {
+                    reasonModalError.textContent = `Please provide at least ${REASON_MIN_LENGTH} characters.`;
+                    return;
+                }
+            }
+
+            isSubmitting = true;
+            reasonConfirmBtn.disabled = true;
+            const originalText = reasonConfirmBtn.textContent;
+            reasonConfirmBtn.textContent = 'Submitting...';
+            reasonModalError.textContent = '';
+
+            try {
+                const res = await fetch(pendingAction.url, {
+                    method: pendingAction.method,
+                    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ reason })
+                });
+                const result = await res.json();
+                if (!res.ok) {
+                    reasonModalError.textContent = result.message || 'Something went wrong';
+                    isSubmitting = false;
+                    reasonConfirmBtn.disabled = false;
+                    reasonConfirmBtn.textContent = originalText;
+                    return;
+                }
+                window.location.reload();
+            } catch (err) {
+                reasonModalError.textContent = 'Network error — please try again';
+                isSubmitting = false;
+                reasonConfirmBtn.disabled = false;
+                reasonConfirmBtn.textContent = originalText;
+            }
+        });
+
+        const cancelOrderBtn = document.getElementById('cancelOrderBtn');
+        if (cancelOrderBtn) {
+            cancelOrderBtn.addEventListener('click', () => {
+                openReasonModal({
+                    title: 'Cancel order',
+                    hint: 'Reason is optional.',
+                    reasonRequired: false,
+                    url: `/orders/${orderId}/cancel`,
+                    method: 'POST'
+                });
+            });
+        }
+
+        const returnOrderBtn = document.getElementById('returnOrderBtn');
+        if (returnOrderBtn) {
+            returnOrderBtn.addEventListener('click', () => {
+                openReasonModal({
+                    title: 'Return order',
+                    hint: 'Please tell us why you\'re returning this order — this is required.',
+                    reasonRequired: true,
+                    url: `/orders/${orderId}/return`,
+                    method: 'POST'
+                });
+            });
+        }
+
+        document.querySelectorAll('.item-cancel-btn').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const row = btn.closest('[data-product-id]');
+                const productId = row.dataset.productId;
+                const variantId = row.dataset.variantId;
+                openReasonModal({
+                    title: 'Cancel this item',
+                    hint: 'Reason is optional.',
+                    reasonRequired: false,
+                    url: `/orders/${orderId}/items/${productId}/${variantId}/cancel`,
+                    method: 'POST'
+                });
+            });
+        });
+    </script>
+
+</body>
+</html>

@@ -8,12 +8,10 @@ export const errorHandler = (err, req, res, next) => {
     ? err.message
     : 'Something went wrong. Please try again.';
 
-  // If it's an API/XHR request, return JSON
   if (req.xhr || req.headers.accept?.includes('application/json')) {
     return res.status(statusCode).json({ success: false, message });
   }
 
-  // If admin route
   if (req.path.startsWith('/admin')) {
     return res.status(statusCode).render('admin/error', {
       title: 'Error',
@@ -23,7 +21,6 @@ export const errorHandler = (err, req, res, next) => {
     });
   }
 
-  // User facing error
   res.status(statusCode).render('user/error', {
     title: 'Error',
     message,
@@ -32,8 +29,9 @@ export const errorHandler = (err, req, res, next) => {
 };
 
 export const notFound = (req, res, next) => {
-  const err = new Error(`Page not found: ${req.originalUrl}`);
+
+  const err = new Error('The page or resource you requested was not found.');
   err.statusCode = 404;
-  err.isOperational = true; 
+  err.isOperational = true;
   next(err);
 };

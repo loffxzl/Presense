@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title><%= title %> | Presense</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+    :root{
+        --bg:#E4E0D4; --ink:#18160F; --ink-soft:#5A5647; --card:#F7F5EE;
+        --line:#C7C0AC; --accent:#7A2E22; --sale:#4B5A3D;
+    }
+    *{ box-sizing:border-box; }
+    body{ margin:0; background:var(--bg); color:var(--ink); font-family:'Work Sans', sans-serif; -webkit-font-smoothing:antialiased; }
+    a{ color:inherit; text-decoration:none; }
+
+    header{ display:flex; align-items:center; justify-content:space-between; padding:22px 48px; border-bottom:1px solid var(--line); }
+    .wordmark{ font-family:'Fraunces', serif; font-size:22px; font-weight:600; }
+
+    main{ padding:48px; max-width:1080px; margin:0 auto; display:grid; grid-template-columns:1.3fr 1fr; gap:40px; align-items:start; }
+    h1{ font-family:'Fraunces', serif; font-style:italic; font-weight:400; font-size:30px; margin:0 0 24px; grid-column:1 / -1; }
+
+    section{ background:var(--card); border:1px solid var(--line); border-radius:10px; padding:24px; }
+    h2{ font-family:'IBM Plex Mono', monospace; font-size:12px; text-transform:uppercase; letter-spacing:0.1em; color:var(--ink-soft); margin:0 0 18px; }
+
+    /* --- Addresses --- */
+    .address-card{
+        border:1px solid var(--line); border-radius:8px; padding:16px; margin-bottom:12px;
+        display:flex; gap:12px; align-items:flex-start; cursor:pointer; position:relative;
+    }
+    .address-card.selected{ border-color:var(--ink); box-shadow:inset 0 0 0 1px var(--ink); }
+    .address-card input[type="radio"]{ margin-top:3px; }
+    .address-name{ font-weight:600; font-size:14px; }
+    .default-tag{
+        font-family:'IBM Plex Mono', monospace; font-size:9px; text-transform:uppercase; letter-spacing:0.06em;
+        color:var(--sale); border:1px solid var(--sale); border-radius:999px; padding:1px 7px; margin-left:8px;
+    }
+    .address-lines{ font-size:13px; color:var(--ink-soft); line-height:1.5; margin-top:2px; }
+    .address-actions{ margin-left:auto; display:flex; gap:10px; font-size:11px; }
+    .address-actions button{
+        background:none; border:none; cursor:pointer; color:var(--ink-soft);
+        font-family:'IBM Plex Mono', monospace; text-transform:uppercase; letter-spacing:0.05em;
+        border-bottom:1px solid var(--line);
+    }
+    .address-actions button:hover{ color:var(--ink); border-color:var(--ink); }
+
+    .add-address-btn{
+        width:100%; padding:12px; margin-top:4px;
+        font-family:'IBM Plex Mono', monospace; font-size:11px; text-transform:uppercase; letter-spacing:0.08em;
+        border:1px dashed var(--line); background:transparent; border-radius:8px; cursor:pointer; color:var(--ink-soft);
+    }
+    .add-address-btn:hover{ border-color:var(--ink); color:var(--ink); }
+
+    .empty-note{ font-size:13px; color:var(--ink-soft); }
+
+    /* --- Order items --- */
+    .order-item{ display:flex; gap:12px; align-items:center; padding:12px 0; border-bottom:1px solid var(--line); }
+    .order-item img, .order-item .no-img{
+        width:56px; height:56px; border-radius:6px; object-fit:cover; background:#DEDACC;
+        display:flex; align-items:center; justify-content:center; font-size:9px; color:var(--ink-soft);
+    }
+    .order-item .info{ flex:1; }
+    .order-item .name{ font-size:13px; font-weight:600; }
+    .order-item .meta{ font-size:12px; color:var(--ink-soft); }
+    .order-item .line-total{ font-family:'IBM Plex Mono', monospace; font-size:13px; }
+
+    .pricing-row{ display:flex; justify-content:space-between; font-size:13px; padding:6px 0; color:var(--ink-soft); }
+    .pricing-row.total{ color:var(--ink); font-weight:600; font-size:16px; border-top:1px solid var(--ink); margin-top:8px; padding-top:14px; }
+    .pricing-row .value{ font-family:'IBM Plex Mono', monospace; }
+
+    .available-coupons{ display:flex; flex-direction:column; gap:8px; margin-bottom:12px; }
+    .coupon-chip{
+        display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; text-align:left;
+        border:1px dashed var(--sale); background:transparent; border-radius:8px;
+        padding:10px 14px; cursor:pointer; width:100%;
+    }
+    .coupon-chip:hover{ background:rgba(75,90,61,0.08); }
+    .coupon-chip.selected{ border-style:solid; background:rgba(75,90,61,0.1); }
+    .coupon-chip-code{ font-family:'IBM Plex Mono', monospace; font-size:12px; font-weight:600; color:var(--ink); }
+    .coupon-chip-save{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--sale); }
+    .coupon-chip-desc{ font-size:11px; color:var(--ink-soft); width:100%; margin-top:2px; }
+
+    .coupon-row{ display:flex; gap:8px; margin-top:4px; }
+    .coupon-row input{
+        flex:1; padding:10px 12px; border:1px solid var(--line); border-radius:6px;
+        background:var(--bg); font-family:'IBM Plex Mono', monospace; font-size:12px;
+    }
+    .coupon-row button{
+        font-family:'IBM Plex Mono', monospace; font-size:11px; text-transform:uppercase; letter-spacing:0.05em;
+        padding:10px 16px; border:1px solid var(--ink); background:transparent; color:var(--ink);
+        border-radius:6px; cursor:pointer; white-space:nowrap;
+    }
+    .coupon-row button:disabled{ opacity:0.5; cursor:not-allowed; }
+    .coupon-message{ font-size:12px; margin:8px 0 0; min-height:16px; }
+    .coupon-message.error{ color:var(--accent); }
+    .coupon-message.success{ color:var(--sale); }
+    #appliedCouponLabel{ font-family:'IBM Plex Mono', monospace; font-size:10px; color:var(--ink-soft); }
+
+    .place-order-btn{
+        width:100%; margin-top:20px; padding:16px;
+        font-family:'IBM Plex Mono', monospace; font-size:12px; text-transform:uppercase; letter-spacing:0.08em;
+        background:var(--ink); color:var(--card); border:none; border-radius:8px; cursor:pointer;
+    }
+    .place-order-btn:disabled{ opacity:0.5; cursor:not-allowed; }
+    .payment-note{ font-size:11px; color:var(--ink-soft); margin-top:10px; text-align:center; }
+
+    /* --- Modal --- */
+    .modal-overlay{ position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:100; display:none; align-items:center; justify-content:center; padding:16px; }
+    .modal-overlay.show{ display:flex; }
+    .modal-box{ background:var(--card); border-radius:14px; padding:28px; width:100%; max-width:480px; max-height:90vh; overflow-y:auto; }
+    .modal-box h3{ font-family:'Fraunces', serif; font-size:19px; margin:0 0 18px; }
+    .form-row{ margin-bottom:12px; }
+    .form-row label{ font-family:'IBM Plex Mono', monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:var(--ink-soft); display:block; margin-bottom:5px; }
+    .form-row input{ width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:6px; background:var(--bg); font-size:13px; }
+    .form-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .field-error{ color:var(--accent); font-size:11px; margin-top:4px; }
+    .modal-actions{ display:flex; gap:10px; margin-top:18px; }
+    .modal-actions button{ flex:1; padding:12px; border-radius:8px; font-size:13px; font-family:'IBM Plex Mono', monospace; text-transform:uppercase; letter-spacing:0.05em; cursor:pointer; }
+    .btn-save{ background:var(--ink); color:var(--card); border:none; }
+    .btn-cancel{ background:transparent; border:1px solid var(--line); color:var(--ink-soft); }
+    .checkbox-row{ display:flex; align-items:center; gap:8px; font-size:12px; margin-top:6px; }
+
+    @media (max-width:800px){
+        main{ grid-template-columns:1fr; padding:24px; }
+        header{ padding:18px 24px; }
+    }
+</style>
+</head>
+<body>
+
+<header><a href="/" class="wordmark">Presense</a></header>
+
+<main>
+    <h1>Checkout</h1>
+
+    <!-- Left: Addresses -->
+    <section>
+        <h2>Delivery address</h2>
+        <div id="addressList">
+            <% if (addresses.length === 0) { %>
+                <p class="empty-note">No saved addresses yet — add one to continue.</p>
+            <% } %>
+            <% addresses.forEach((addr) => { %>
+                <label class="address-card <%= addr.isDefault ? 'selected' : '' %>" data-address-id="<%= addr._id %>">
+                    <input type="radio" name="selectedAddress" value="<%= addr._id %>" <%= addr.isDefault ? 'checked' : '' %>>
+                    <div style="flex:1;">
+                        <span class="address-name"><%= addr.fullName %></span>
+                        <% if (addr.isDefault) { %><span class="default-tag">Default</span><% } %>
+                        <div class="address-lines">
+                            <%= addr.line1 %><% if (addr.line2) { %>, <%= addr.line2 %><% } %><br>
+                            <%= addr.city %>, <%= addr.state %> — <%= addr.pincode %><br>
+                            <%= addr.phone %>
+                        </div>
+                    </div>
+                    <div class="address-actions">
+                        <button type="button" class="edit-address-btn"
+                            data-address='<%- JSON.stringify(addr) %>'>Edit</button>
+                        <% if (!addr.isDefault) { %>
+                            <button type="button" class="set-default-btn">Set default</button>
+                        <% } %>
+                    </div>
+                </label>
+            <% }) %>
+        </div>
+        <button type="button" class="add-address-btn" id="addAddressBtn">+ Add new address</button>
+    </section>
+
+    <!-- Right: Order summary -->
+    <section>
+        <h2>Order summary</h2>
+        <div>
+            <% items.forEach((item) => { %>
+                <div class="order-item">
+                    <% if (item.image) { %>
+                        <img src="<%= item.image %>" alt="<%= item.name %>">
+                    <% } else { %>
+                        <div class="no-img">No image</div>
+                    <% } %>
+                    <div class="info">
+                        <div class="name"><%= item.name %></div>
+                        <div class="meta"><%= item.size %> &middot; Qty <%= item.quantity %></div>
+                    </div>
+                    <span class="line-total">₹<%= item.lineTotal %></span>
+                </div>
+            <% }) %>
+        </div>
+
+        <% if (availableCoupons && availableCoupons.length > 0) { %>
+            <div class="available-coupons">
+                <% availableCoupons.forEach((c) => { %>
+                    <button type="button" class="coupon-chip" data-code="<%= c.code %>">
+                        <span class="coupon-chip-code"><%= c.code %></span>
+                        <span class="coupon-chip-save">Save ₹<%= c.youSave %></span>
+                        <% if (c.description) { %><span class="coupon-chip-desc"><%= c.description %></span><% } %>
+                    </button>
+                <% }) %>
+            </div>
+        <% } %>
+
+        <div class="coupon-row">
+            <input type="text" id="couponInput" placeholder="Coupon code" style="text-transform:uppercase;">
+            <button type="button" id="applyCouponBtn">Apply</button>
+        </div>
+        <p class="coupon-message" id="couponMessage"></p>
+
+        <div style="margin-top:16px;" id="pricingBlock">
+            <div class="pricing-row"><span>Subtotal</span><span class="value" id="priceSubtotal">₹<%= pricing.subtotal %></span></div>
+            <div class="pricing-row"><span>Tax</span><span class="value" id="priceTax">₹<%= pricing.tax %></span></div>
+            <div class="pricing-row" id="discountRow" style="<%= pricing.discount > 0 ? '' : 'display:none;' %>">
+                <span>Discount <span id="appliedCouponLabel"></span></span>
+                <span class="value" id="priceDiscount">−₹<%= pricing.discount %></span>
+            </div>
+            <div class="pricing-row">
+                <span>Shipping</span>
+                <span class="value" id="priceShipping"><%= pricing.shippingFee === 0 ? 'Free' : '₹' + pricing.shippingFee %></span>
+            </div>
+            <div class="pricing-row total"><span>Total</span><span class="value" id="priceTotal">₹<%= pricing.total %></span></div>
+        </div>
+
+        <button type="button" class="place-order-btn" id="placeOrderBtn" <%= items.length === 0 ? 'disabled' : '' %>>
+            Place order — Cash on Delivery
+        </button>
+        <p class="payment-note">You'll pay in cash when your order arrives.</p>
+    </section>
+</main>
+
+<!-- Address Modal -->
+<div id="addressModal" class="modal-overlay">
+    <div class="modal-box">
+        <h3 id="addressModalTitle">Add address</h3>
+        <form id="addressForm" novalidate>
+            <div class="form-row">
+                <label>Full name</label>
+                <input type="text" name="fullName" id="a-fullName" required>
+                <p class="field-error" id="e-fullName"></p>
+            </div>
+            <div class="form-row">
+                <label>Phone</label>
+                <input type="text" name="phone" id="a-phone" maxlength="10" required>
+                <p class="field-error" id="e-phone"></p>
+            </div>
+            <div class="form-row">
+                <label>Address line 1</label>
+                <input type="text" name="line1" id="a-line1" required>
+                <p class="field-error" id="e-line1"></p>
+            </div>
+            <div class="form-row">
+                <label>Address line 2 (optional)</label>
+                <input type="text" name="line2" id="a-line2">
+            </div>
+            <div class="form-grid">
+                <div class="form-row">
+                    <label>City</label>
+                    <input type="text" name="city" id="a-city" required>
+                </div>
+                <div class="form-row">
+                    <label>State</label>
+                    <input type="text" name="state" id="a-state" required>
+                </div>
+            </div>
+            <div class="form-grid">
+                <div class="form-row">
+                    <label>Pincode</label>
+                    <input type="text" name="pincode" id="a-pincode" maxlength="6" required>
+                </div>
+                <div class="form-row">
+                    <label>Country</label>
+                    <input type="text" name="country" id="a-country" value="India" required>
+                </div>
+            </div>
+            <p class="field-error" id="e-form"></p>
+            <label class="checkbox-row">
+                <input type="checkbox" name="isDefault" id="a-isDefault">
+                Set as default address
+            </label>
+            <div class="modal-actions">
+                <button type="submit" class="btn-save">Save address</button>
+                <button type="button" class="btn-cancel" id="cancelAddressBtn">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    const addressList = document.getElementById('addressList');
+    const addressModal = document.getElementById('addressModal');
+    const addressForm = document.getElementById('addressForm');
+    const addressModalTitle = document.getElementById('addressModalTitle');
+    let editingAddressId = null;
+
+    function openAddressModal(address = null) {
+        addressForm.reset();
+        document.getElementById('e-form').textContent = '';
+        editingAddressId = address ? address._id : null;
+        addressModalTitle.textContent = address ? 'Edit address' : 'Add address';
+
+        if (address) {
+            document.getElementById('a-fullName').value = address.fullName || '';
+            document.getElementById('a-phone').value = address.phone || '';
+            document.getElementById('a-line1').value = address.line1 || '';
+            document.getElementById('a-line2').value = address.line2 || '';
+            document.getElementById('a-city').value = address.city || '';
+            document.getElementById('a-state').value = address.state || '';
+            document.getElementById('a-pincode').value = address.pincode || '';
+            document.getElementById('a-country').value = address.country || 'India';
+            document.getElementById('a-isDefault').checked = !!address.isDefault;
+        } else {
+            document.getElementById('a-country').value = 'India';
+        }
+        addressModal.classList.add('show');
+    }
+    function closeAddressModal() { addressModal.classList.remove('show'); }
+
+    document.getElementById('addAddressBtn').addEventListener('click', () => openAddressModal());
+    document.getElementById('cancelAddressBtn').addEventListener('click', closeAddressModal);
+    addressModal.addEventListener('click', (e) => { if (e.target === addressModal) closeAddressModal(); });
+
+    addressList.addEventListener('click', async (e) => {
+        const card = e.target.closest('.address-card');
+        if (!card) return;
+        const addressId = card.dataset.addressId;
+
+        if (e.target.classList.contains('edit-address-btn')) {
+            e.preventDefault();
+            openAddressModal(JSON.parse(e.target.dataset.address));
+            return;
+        }
+        if (e.target.classList.contains('set-default-btn')) {
+            e.preventDefault();
+            try {
+                const res = await fetch(`/addresses/${addressId}/default`, { method: 'PATCH', headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+                if (!res.ok) throw new Error('Could not set default address');
+                window.location.reload();
+            } catch (err) { alert(err.message); }
+            return;
+        }
+        // otherwise: selecting the card visually (radio input already handles the value)
+        document.querySelectorAll('.address-card').forEach((c) => c.classList.remove('selected'));
+        card.classList.add('selected');
+    });
+
+    addressForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const payload = {
+            fullName: document.getElementById('a-fullName').value.trim(),
+            phone: document.getElementById('a-phone').value.trim(),
+            line1: document.getElementById('a-line1').value.trim(),
+            line2: document.getElementById('a-line2').value.trim(),
+            city: document.getElementById('a-city').value.trim(),
+            state: document.getElementById('a-state').value.trim(),
+            pincode: document.getElementById('a-pincode').value.trim(),
+            country: document.getElementById('a-country').value.trim(),
+            isDefault: document.getElementById('a-isDefault').checked
+        };
+
+        try {
+            const url = editingAddressId ? `/addresses/${editingAddressId}` : '/addresses';
+            const method = editingAddressId ? 'PATCH' : 'POST';
+            const res = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify(payload)
+            });
+            const result = await res.json();
+            if (!res.ok) {
+                document.getElementById('e-form').textContent = result.message || 'Something went wrong';
+                return;
+            }
+            window.location.reload();
+        } catch (err) {
+            document.getElementById('e-form').textContent = 'Network error — please try again';
+        }
+    });
+
+    // --- Coupon apply/preview ---
+    let appliedCouponCode = null;
+    const couponInput = document.getElementById('couponInput');
+    const applyCouponBtn = document.getElementById('applyCouponBtn');
+    const couponMessage = document.getElementById('couponMessage');
+
+    function setPricing(pricing) {
+        document.getElementById('priceSubtotal').textContent = `₹${pricing.subtotal}`;
+        document.getElementById('priceTax').textContent = `₹${pricing.tax}`;
+        document.getElementById('priceShipping').textContent = pricing.shippingFee === 0 ? 'Free' : `₹${pricing.shippingFee}`;
+        document.getElementById('priceTotal').textContent = `₹${pricing.total}`;
+
+        const discountRow = document.getElementById('discountRow');
+        if (pricing.discount > 0) {
+            document.getElementById('priceDiscount').textContent = `−₹${pricing.discount}`;
+            discountRow.style.display = '';
+        } else {
+            discountRow.style.display = 'none';
+        }
+    }
+
+    async function applyCoupon(codeOverride) {
+        const code = (codeOverride !== undefined ? codeOverride : couponInput.value).trim();
+        if (!code) {
+            couponMessage.textContent = 'Enter a coupon code first.';
+            couponMessage.className = 'coupon-message error';
+            return;
+        }
+
+        applyCouponBtn.disabled = true;
+        applyCouponBtn.textContent = 'Applying…';
+
+        try {
+            const res = await fetch('/checkout/apply-coupon', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ code })
+            });
+            const result = await res.json();
+
+            if (!res.ok) {
+                couponMessage.textContent = result.message || 'Could not apply coupon';
+                couponMessage.className = 'coupon-message error';
+                appliedCouponCode = null;
+                document.getElementById('appliedCouponLabel').textContent = '';
+                document.querySelectorAll('.coupon-chip').forEach((c) => c.classList.remove('selected'));
+                return;
+            }
+
+            appliedCouponCode = result.code;
+            couponInput.value = result.code;
+            setPricing(result.pricing);
+            document.getElementById('appliedCouponLabel').textContent = `(${result.code})`;
+            couponMessage.textContent = `Coupon "${result.code}" applied.`;
+            couponMessage.className = 'coupon-message success';
+
+            document.querySelectorAll('.coupon-chip').forEach((c) => {
+                c.classList.toggle('selected', c.dataset.code === result.code);
+            });
+        } catch (err) {
+            couponMessage.textContent = 'Network error — please try again';
+            couponMessage.className = 'coupon-message error';
+        } finally {
+            applyCouponBtn.disabled = false;
+            applyCouponBtn.textContent = 'Apply';
+        }
+    }
+
+    applyCouponBtn.addEventListener('click', () => applyCoupon());
+
+    document.querySelectorAll('.coupon-chip').forEach((chip) => {
+        chip.addEventListener('click', () => applyCoupon(chip.dataset.code));
+    });
+
+    // --- Place order ---
+    document.getElementById('placeOrderBtn').addEventListener('click', async () => {
+        const selected = document.querySelector('input[name="selectedAddress"]:checked');
+        if (!selected) return alert('Please select or add a delivery address first.');
+
+        const btn = document.getElementById('placeOrderBtn');
+        btn.disabled = true;
+        btn.textContent = 'Placing order…';
+
+        try {
+            const res = await fetch('/checkout/place-order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ addressId: selected.value, couponCode: appliedCouponCode })
+            });
+            const result = await res.json();
+            if (!res.ok) {
+                alert(result.message || 'Could not place order');
+                btn.disabled = false;
+                btn.textContent = 'Place order — Cash on Delivery';
+                return;
+            }
+            window.location.href = `/orders/${result.orderId}/success`;
+        } catch (err) {
+            alert('Network error — please try again');
+            btn.disabled = false;
+            btn.textContent = 'Place order — Cash on Delivery';
+        }
+    });
+</script>
+
+</body>
+</html>

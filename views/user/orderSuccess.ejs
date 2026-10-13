@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> | Presense</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        :root{ --bg:#E4E0D4; --ink:#18160F; --ink-soft:#5A5647; --card:#F7F5EE; --line:#C7C0AC; --sale:#4B5A3D; }
+        *{ box-sizing:border-box; }
+        body{ margin:0; background:var(--bg); color:var(--ink); font-family:'Work Sans', sans-serif; -webkit-font-smoothing:antialiased; }
+        a{ color:inherit; text-decoration:none; }
+
+        .wrap{
+            min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center;
+            text-align:center; padding:40px 20px;
+        }
+        .illustration{ margin-bottom:24px; }
+        .eyebrow{
+            font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:0.14em; text-transform:uppercase;
+            color:var(--sale); margin-bottom:10px;
+        }
+        h1{ font-family:'Fraunces', serif; font-style:italic; font-weight:400; font-size:clamp(28px,5vw,42px); margin:0 0 12px; }
+        p.sub{ color:var(--ink-soft); font-size:15px; max-width:40ch; margin:0 auto 6px; line-height:1.6; }
+        .order-code{
+            font-family:'IBM Plex Mono', monospace; font-size:13px; background:var(--card);
+            border:1px solid var(--line); border-radius:999px; padding:8px 18px; display:inline-block; margin-top:16px;
+        }
+        .actions{ display:flex; gap:14px; margin-top:32px; flex-wrap:wrap; justify-content:center; }
+        .actions a{
+            font-family:'IBM Plex Mono', monospace; font-size:12px; text-transform:uppercase; letter-spacing:0.06em;
+            padding:14px 26px; border-radius:8px;
+        }
+        .btn-primary{ background:var(--ink); color:var(--card); }
+        .btn-secondary{ border:1px solid var(--line); color:var(--ink); }
+    </style>
+</head>
+<body>
+
+<div class="wrap">
+    <div class="illustration">
+        <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="60" cy="60" r="56" stroke="#4B5A3D" stroke-width="2" stroke-dasharray="4 6"/>
+            <circle cx="60" cy="60" r="42" fill="#F7F5EE" stroke="#18160F" stroke-width="1.5"/>
+            <path d="M42 61 L54 73 L80 47" stroke="#4B5A3D" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+    </div>
+
+    <p class="eyebrow">Order confirmed</p>
+    <h1>Thank you for your order.</h1>
+    <p class="sub">We've received your order and it's being prepared. You'll pay in cash when it arrives at your door.</p>
+    <span class="order-code">Order <%= order.orderCode %></span>
+
+    <div class="actions">
+        <a href="/orders/<%= order._id %>" class="btn-primary">View order details</a>
+        <a href="/products" class="btn-secondary">Continue shopping</a>
+    </div>
+</div>
+
+</body>
+</html>

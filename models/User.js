@@ -1,16 +1,16 @@
 import mongoose from 'mongoose';
 
 const addressSchema = new mongoose.Schema({
-  fullName: { type: String },
-  phone: { type: String },
-  line1: { type: String },
+  fullName: { type: String, required: true },
+  phone: { type: String, required: true },
+  line1: { type: String, required: true },
   line2: { type: String },
-  city: { type: String },
-  state: { type: String },
-  postalCode: { type: String },
-  country: { type: String },
+  city: { type: String, required: true },
+  state: { type: String, required: true },
+  pincode: { type: String, required: true },
+  country: { type: String, required: true, default: 'India' },
   isDefault: { type: Boolean, default: false }
-});
+}, { timestamps: true });
 
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true },
@@ -27,5 +27,5 @@ const userSchema = new mongoose.Schema({
   addresses: [addressSchema]
 }, { timestamps: true });
 
+export { addressSchema };
 export default mongoose.model('User', userSchema);
-

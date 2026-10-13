@@ -17,3 +17,9 @@ export const createCart = async (userId) => {
 export const saveCart = async (cart) => {
     return await cart.save();
 };
+
+export const getCartItemCount = async (userId) => {
+    let cart = await Cart.findOne({userId}).select('items.quantity');
+    if(!cart) return 0;
+    return cart.items.reduce((sum,item) => sum + item.quantity ,0);
+};

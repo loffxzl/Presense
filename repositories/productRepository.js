@@ -1,7 +1,8 @@
 import Product from '../models/Products.js';
 
+
 export const findProduct = async ({filter,sort,skip,limit}) =>{
-    return await Product.find(filter).sort(sort).skip(skip).limit(limit);
+    return await Product.find(filter).populate('brandId', 'name').sort(sort).skip(skip).limit(limit);
 };
 
 export const addProduct = async (data)=>{

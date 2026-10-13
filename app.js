@@ -1,4 +1,3 @@
-
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -14,11 +13,18 @@ import authRoutes from './routes/authRoutes.js';
 import adminUserRoutes from './routes/admin/userRoutes.js';
 import adminCategoryRoutes from './routes/admin/categoryRoutes.js';
 import adminProductRoutes from './routes/admin/productRoutes.js';
+import adminCouponRoutes from './routes/admin/couponRoutes.js';
+import adminOrderRoutes from './routes/admin/orderRoutes.js';
+import adminBrandRoutes from './routes/admin/brandRoutes.js'
+import adminInventoryRoutes from './routes/admin/inventoryRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import userProductListRoutes from './routes/user/productListingRouter.js'
 import userProductDetailRoutes from './routes/user/productDetailRouter.js'
 import userCartRoutes from './routes/user/cartRouter.js'
 import wishlistRoutes from './routes/user/wishlistRouter.js';
+import checkoutRoutes from './routes/user/checkoutRouter.js';
+import checkoutAddressRoutes from './routes/user/Checkoutaddressroutes.js'
+import orderRoutes from './routes/user/orderRouter.js';
 import { adminLogout } from './controllers/auth/authController.js';
 import compression from 'compression';
 import morgan from 'morgan';
@@ -26,6 +32,7 @@ import logger  from './utils/logger.js';
 import fs from 'fs';
 import { errorHandler, notFound } from './middlewares/errorHandler.js';
 import flash from 'connect-flash';
+import {attachCartCount} from './middlewares/attachCartCount.js';
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -72,16 +79,25 @@ app.use((req, res, next) => {
 
 app.use(passport.initialize());
 app.use(attachUser);
+app.use(attachCartCount);
+
 
 app.use('/auth', authRoutes);
 app.use('/admin/users', adminUserRoutes);
 app.use('/admin/category', adminCategoryRoutes);
 app.use('/admin/products', adminProductRoutes);
+app.use('/admin/coupon', adminCouponRoutes);
+ app.use('/admin/orders', adminOrderRoutes);
+app.use('/admin/brands', adminBrandRoutes);
+app.use('/admin/inventory', adminInventoryRoutes);
 app.use('/', userRoutes);
 app.use('/products',userProductListRoutes);
 app.use('/products',userProductDetailRoutes);
 app.use('/cart',userCartRoutes);
 app.use('/wishlist', wishlistRoutes);
+app.use('/checkout', checkoutRoutes);
+app.use('/addresses', checkoutAddressRoutes);
+app.use('/orders', orderRoutes);
 
 
 app.get('/admin/logout', adminLogout);
@@ -90,4 +106,4 @@ app.use(notFound)
 app.use(errorHandler)
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}/`)); 
+app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}/`));

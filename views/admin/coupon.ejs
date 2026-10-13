@@ -1,0 +1,1794 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title><%= title %> | Presense Admin</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+
+        .font-serif {
+            font-family: Georgia, Cambria, "Times New Roman", Times, serif;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 100;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal-box {
+            background: #fff;
+            border-radius: 16px;
+            padding: 32px;
+            width: 100%;
+            max-width: 520px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+    </style>
+
+</head>
+
+
+<body class="bg-gray-50 flex min-h-screen">
+
+
+    <!-- Sidebar -->
+
+    <%- include('../partials/adminSidebar', { adminName, activePage: 'coupon' }) %>
+
+
+    <!-- Main Content -->
+
+    <main class="flex-1 ml-64 p-8">
+
+
+        <!-- Header -->
+
+        <div class="flex justify-between items-center mb-6">
+
+            <div>
+
+                <h2 class="text-2xl font-bold">
+                    Coupon Management
+                </h2>
+
+                <p class="text-gray-400 text-sm mt-1">
+                    Total: <%= totalCoupon %> coupons
+                </p>
+
+            </div>
+
+
+            <button
+                onclick="openModal('add')"
+                class="bg-gray-900 text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-yellow-600 transition">
+
+                + Add Coupon
+
+            </button>
+
+        </div>
+
+
+        <!-- Alerts -->
+
+        <% const successMsg = typeof success !== 'undefined' ? success : null; %>
+
+        <% const errorMsg = typeof error !== 'undefined' ? error : null; %>
+
+
+        <% if (successMsg) { %>
+
+            <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6 text-sm">
+
+                ✓ <%= successMsg %>
+
+            </div>
+
+        <% } %>
+
+
+        <% if (errorMsg) { %>
+
+            <div class="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-6 text-sm">
+
+                <%= errorMsg %>
+
+            </div>
+
+        <% } %>
+
+
+        <!-- Search -->
+
+        <form
+            action="/admin/coupon"
+            method="GET"
+            class="flex gap-3 mb-6">
+
+            <input
+                type="text"
+                name="search"
+                value="<%= search %>"
+                placeholder="Search coupon code..."
+                class="border p-2 rounded-lg flex-1 text-sm focus:outline-none focus:border-gray-400"
+            />
+
+
+            <button
+                type="submit"
+                class="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-700 transition">
+
+                Search
+
+            </button>
+
+
+            <% if (search) { %>
+
+                <a
+                    href="/admin/coupon"
+                    class="border px-4 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition">
+
+                    Clear
+
+                </a>
+
+            <% } %>
+
+        </form>
+
+
+        <!-- Coupon Grid -->
+
+        <% if (coupons.length === 0) { %>
+
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm py-16 text-center text-gray-400 text-sm">
+
+                No coupons found
+
+            </div>
+
+        <% } else { %>
+
+
+            <div
+                class="grid gap-5"
+                style="grid-template-columns: repeat(auto-fill, minmax(260px, 280px));">
+
+
+                <% coupons.forEach((coupon) => { %>
+
+
+                    <div
+                        class="bg-white rounded-lg border border-gray-200 overflow-hidden hover:border-gray-300 hover:shadow-sm transition">
+
+
+                        <!-- Coupon Header -->
+
+                        <div class="bg-gray-900 text-white p-5 relative">
+
+                            <div class="flex items-start justify-between gap-2">
+
+                                <div>
+
+                                    <p class="text-[10px] uppercase tracking-wider text-gray-400">
+                                        Coupon Code
+                                    </p>
+
+                                    <h3 class="font-bold text-lg tracking-wide mt-1">
+                                        <%= coupon.code %>
+                                    </h3>
+
+                                </div>
+
+
+                                <span
+                                    class="shrink-0 mt-1 flex items-center gap-1.5 text-[11px] font-medium">
+
+                                    <span
+                                        class="w-1.5 h-1.5 rounded-full <%= coupon.isActive ? 'bg-green-400' : 'bg-red-400' %>">
+                                    </span>
+
+                                    <%= coupon.isActive ? 'Active' : 'Inactive' %>
+
+                                </span>
+
+                            </div>
+
+
+                            <!-- Discount -->
+
+                            <div class="mt-5">
+
+                                <span class="text-3xl font-bold">
+
+                                    <% if (coupon.discountType === 'percentage') { %>
+
+                                        <%= coupon.discountValue %>%
+
+                                    <% } else { %>
+
+                                        ₹<%= coupon.discountValue %>
+
+                                    <% } %>
+
+                                </span>
+
+                                <span class="text-xs text-gray-400 ml-1">
+                                    <%= coupon.discountType === 'percentage' ? 'OFF' : 'FLAT DISCOUNT' %>
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- Details -->
+
+                        <div class="p-4">
+
+
+                            <% if (coupon.description) { %>
+
+                                <p class="text-gray-500 text-xs mb-4 line-clamp-2">
+
+                                    <%= coupon.description %>
+
+                                </p>
+
+                            <% } %>
+
+
+                            <!-- Coupon Details -->
+
+                            <div class="space-y-2 text-xs">
+
+
+                                <div class="flex justify-between">
+
+                                    <span class="text-gray-400">
+                                        Min. Order
+                                    </span>
+
+                                    <span class="font-medium text-gray-700">
+
+                                        ₹<%= coupon.minOrderAmount || 0 %>
+
+                                    </span>
+
+                                </div>
+
+
+                                <% if (coupon.discountType === 'percentage' && coupon.maxDiscountAmount) { %>
+
+                                    <div class="flex justify-between">
+
+                                        <span class="text-gray-400">
+                                            Max Discount
+                                        </span>
+
+                                        <span class="font-medium text-gray-700">
+
+                                            ₹<%= coupon.maxDiscountAmount %>
+
+                                        </span>
+
+                                    </div>
+
+                                <% } %>
+
+
+                                <div class="flex justify-between">
+
+                                    <span class="text-gray-400">
+                                        Usage
+                                    </span>
+
+                                    <span class="font-medium text-gray-700">
+
+                                        <%= coupon.usedCount || 0 %>
+                                        /
+                                        <%= coupon.usageLimit === 0 ? '∞' : coupon.usageLimit %>
+
+                                    </span>
+
+                                </div>
+
+
+                                <div class="flex justify-between">
+
+                                    <span class="text-gray-400">
+                                        Per User
+                                    </span>
+
+                                    <span class="font-medium text-gray-700">
+
+                                        <%= coupon.usageLimitPerUser === 0 ? 'Unlimited' : coupon.usageLimitPerUser %>
+
+                                    </span>
+
+                                </div>
+
+
+                                <div class="flex justify-between">
+
+                                    <span class="text-gray-400">
+                                        Expires
+                                    </span>
+
+                                    <span class="font-medium text-gray-700">
+
+                                        <%= coupon.expiryDate
+                                            ? new Date(coupon.expiryDate).toLocaleDateString('en-IN')
+                                            : '-' %>
+
+                                    </span>
+
+                                </div>
+
+
+                            </div>
+
+
+                            <!-- Actions -->
+
+                            <div class="flex gap-2 mt-4 pt-3 border-t border-gray-100">
+
+
+                                <button
+                                    onclick="openModal('edit', <%= JSON.stringify(coupon) %>)"
+                                    class="flex-1 text-xs font-medium px-3 py-1.5 rounded-md border border-gray-200 text-gray-700 hover:bg-gray-50 transition">
+
+                                    Edit
+
+                                </button>
+
+
+                                <button
+                                    onclick="deleteCoupon('<%= coupon._id %>', '<%= coupon.code %>')"
+                                    class="flex-1 text-xs font-medium px-3 py-1.5 rounded-md border border-gray-200 text-red-600 hover:bg-red-50 hover:border-red-200 transition">
+
+                                    Delete
+
+                                </button>
+
+
+                            </div>
+
+
+                        </div>
+
+                    </div>
+
+
+                <% }) %>
+
+
+            </div>
+
+        <% } %>
+
+
+        <!-- Pagination -->
+
+        <% if (totalPages > 1) { %>
+
+            <div class="flex items-center gap-2 mt-6">
+
+
+                <% if (currentPage > 1) { %>
+
+                    <a
+                        href="/admin/coupon?page=<%= currentPage - 1 %>&search=<%= search %>"
+                        class="px-3 py-1 rounded bg-gray-200 text-gray-700 text-sm hover:bg-gray-300 transition">
+
+                        &lt;
+
+                    </a>
+
+                <% } %>
+
+
+                <% for (let i = 1; i <= totalPages; i++) { %>
+
+                    <a
+                        href="/admin/coupon?page=<%= i %>&search=<%= search %>"
+                        class="px-3 py-1 rounded text-sm transition
+                        <%= i === currentPage
+                            ? 'bg-gray-900 text-white'
+                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300' %>">
+
+                        <%= i %>
+
+                    </a>
+
+                <% } %>
+
+
+                <% if (currentPage < totalPages) { %>
+
+                    <a
+                        href="/admin/coupon?page=<%= currentPage + 1 %>&search=<%= search %>"
+                        class="px-3 py-1 rounded bg-gray-200 text-gray-700 text-sm hover:bg-gray-300 transition">
+
+                        &gt;
+
+                    </a>
+
+                <% } %>
+
+
+            </div>
+
+        <% } %>
+
+
+        <p class="text-xs text-gray-400 mt-3">
+
+            Total: <%= totalCoupon %> coupons
+
+        </p>
+
+
+    </main>
+
+
+
+    <!-- Add / Edit Coupon Modal -->
+
+    <div id="couponModal" class="modal-overlay">
+
+
+        <div class="modal-box">
+
+
+            <!-- Modal Header -->
+
+            <div class="flex justify-between items-center mb-6">
+
+                <h2
+                    class="font-serif text-xl font-bold text-gray-900"
+                    id="modalTitle">
+
+                    Add Coupon
+
+                </h2>
+
+
+                <button
+                    onclick="closeModal()"
+                    type="button"
+                    class="text-gray-400 hover:text-gray-600">
+
+                    ✕
+
+                </button>
+
+            </div>
+
+
+
+            <!-- Form -->
+
+            <form
+                id="couponForm"
+                novalidate>
+
+
+                <div class="space-y-4">
+
+
+                    <!-- Code -->
+
+                    <div>
+
+                        <label
+                            class="block text-xs font-semibold text-gray-600 uppercase mb-2">
+
+                            Coupon Code
+
+                        </label>
+
+
+                        <input
+                            type="text"
+                            name="code"
+                            id="f-code"
+                            required
+                            maxlength="50"
+                            placeholder="e.g. WELCOME20"
+                            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none text-sm uppercase"
+                        />
+
+
+                        <p
+                            class="text-red-500 text-xs mt-1 hidden"
+                            id="e-code">
+                        </p>
+
+                    </div>
+
+
+
+                    <!-- Description -->
+
+                    <div>
+
+                        <label
+                            class="block text-xs font-semibold text-gray-600 uppercase mb-2">
+
+                            Description
+
+                        </label>
+
+
+                        <textarea
+                            name="description"
+                            id="f-description"
+                            rows="3"
+                            maxlength="500"
+                            placeholder="Describe the coupon..."
+                            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none text-sm resize-none"></textarea>
+
+
+                        <p
+                            class="text-red-500 text-xs mt-1 hidden"
+                            id="e-description">
+                        </p>
+
+                    </div>
+
+
+
+                    <!-- Discount Type -->
+
+                    <div class="grid grid-cols-2 gap-3">
+
+
+                        <div>
+
+                            <label
+                                class="block text-xs font-semibold text-gray-600 uppercase mb-2">
+
+                                Discount Type
+
+                            </label>
+
+
+                            <select
+                                name="discountType"
+                                id="f-discountType"
+                                class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none text-sm">
+
+                                <option value="percentage">
+                                    Percentage
+                                </option>
+
+                                <option value="flat">
+                                    Flat Amount
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        <!-- Discount Value -->
+
+                        <div>
+
+                            <label
+                                class="block text-xs font-semibold text-gray-600 uppercase mb-2">
+
+                                Discount Value
+
+                            </label>
+
+
+                            <input
+                                type="number"
+                                name="discountValue"
+                                id="f-discountValue"
+                                min="0"
+                                step="0.01"
+                                required
+                                placeholder="20"
+                                class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none text-sm"
+                            />
+
+
+                            <p
+                                class="text-red-500 text-xs mt-1 hidden"
+                                id="e-discountValue">
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <!-- Max Discount -->
+
+                    <div id="maxDiscountWrapper">
+
+                        <label
+                            class="block text-xs font-semibold text-gray-600 uppercase mb-2">
+
+                            Maximum Discount Amount
+
+                        </label>
+
+
+                        <input
+                            type="number"
+                            name="maxDiscountAmount"
+                            id="f-maxDiscountAmount"
+                            min="0"
+                            step="0.01"
+                            placeholder="500"
+                            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none text-sm"
+                        />
+
+
+                        <p class="text-gray-400 text-xs mt-1">
+
+                            Only applicable to percentage discounts.
+
+                        </p>
+
+
+                        <p
+                            class="text-red-500 text-xs mt-1 hidden"
+                            id="e-maxDiscountAmount">
+                        </p>
+
+                    </div>
+
+
+
+                    <!-- Minimum Order -->
+
+                    <div>
+
+                        <label
+                            class="block text-xs font-semibold text-gray-600 uppercase mb-2">
+
+                            Minimum Order Amount
+
+                        </label>
+
+
+                        <input
+                            type="number"
+                            name="minOrderAmount"
+                            id="f-minOrderAmount"
+                            min="0"
+                            step="0.01"
+                            value="0"
+                            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none text-sm"
+                        />
+
+
+                        <p
+                            class="text-red-500 text-xs mt-1 hidden"
+                            id="e-minOrderAmount">
+                        </p>
+
+                    </div>
+
+
+
+                    <!-- Expiry Date -->
+
+                    <div>
+
+                        <label
+                            class="block text-xs font-semibold text-gray-600 uppercase mb-2">
+
+                            Expiry Date
+
+                        </label>
+
+
+                        <input
+                            type="datetime-local"
+                            name="expiryDate"
+                            id="f-expiryDate"
+                            required
+                            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none text-sm"
+                        />
+
+
+                        <p
+                            class="text-red-500 text-xs mt-1 hidden"
+                            id="e-expiryDate">
+                        </p>
+
+                    </div>
+
+
+
+                    <!-- Usage Limits -->
+
+                    <div class="grid grid-cols-2 gap-3">
+
+
+                        <!-- Total Usage -->
+
+                        <div>
+
+                            <label
+                                class="block text-xs font-semibold text-gray-600 uppercase mb-2">
+
+                                Usage Limit
+
+                            </label>
+
+
+                            <input
+                                type="number"
+                                name="usageLimit"
+                                id="f-usageLimit"
+                                min="0"
+                                step="1"
+                                value="0"
+                                placeholder="0 = Unlimited"
+                                class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none text-sm"
+                            />
+
+
+                            <p class="text-gray-400 text-xs mt-1">
+
+                                0 = Unlimited
+
+                            </p>
+
+
+                            <p
+                                class="text-red-500 text-xs mt-1 hidden"
+                                id="e-usageLimit">
+                            </p>
+
+                        </div>
+
+
+
+                        <!-- Per User -->
+
+                        <div>
+
+                            <label
+                                class="block text-xs font-semibold text-gray-600 uppercase mb-2">
+
+                                Per User
+
+                            </label>
+
+
+                            <input
+                                type="number"
+                                name="usageLimitPerUser"
+                                id="f-usageLimitPerUser"
+                                min="0"
+                                step="1"
+                                value="1"
+                                placeholder="1"
+                                class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none text-sm"
+                            />
+
+
+                            <p class="text-gray-400 text-xs mt-1">
+
+                                0 = Unlimited
+
+                            </p>
+
+
+                            <p
+                                class="text-red-500 text-xs mt-1 hidden"
+                                id="e-usageLimitPerUser">
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <!-- Active Status -->
+
+                    <div>
+
+                        <label
+                            class="block text-xs font-semibold text-gray-600 uppercase mb-2">
+
+                            Status
+
+                        </label>
+
+
+                        <select
+                            name="isActive"
+                            id="f-isActive"
+                            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none text-sm">
+
+                            <option value="true">
+                                Active
+                            </option>
+
+                            <option value="false">
+                                Inactive
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                </div>
+
+
+
+                <!-- Buttons -->
+
+                <div class="flex gap-3 mt-6">
+
+
+                    <button
+                        type="submit"
+                        id="submitBtn"
+                        class="flex-1 bg-gray-900 text-white py-3 rounded-lg text-sm font-semibold hover:bg-yellow-600 transition">
+
+                        Save
+
+                    </button>
+
+
+                    <button
+                        type="button"
+                        onclick="closeModal()"
+                        class="px-6 py-3 rounded-lg text-sm font-semibold border border-gray-200 text-gray-500 hover:bg-gray-50 transition">
+
+                        Cancel
+
+                    </button>
+
+
+                </div>
+
+
+            </form>
+
+
+        </div>
+
+    </div>
+
+
+
+    <script>
+
+
+        // --------------------------------------------------
+        // Form references
+        // --------------------------------------------------
+
+        const form = document.getElementById('couponForm');
+
+        const codeInput = document.getElementById('f-code');
+
+        const descriptionInput = document.getElementById('f-description');
+
+        const discountTypeInput = document.getElementById('f-discountType');
+
+        const discountValueInput = document.getElementById('f-discountValue');
+
+        const maxDiscountInput = document.getElementById('f-maxDiscountAmount');
+
+        const minOrderInput = document.getElementById('f-minOrderAmount');
+
+        const expiryInput = document.getElementById('f-expiryDate');
+
+        const usageLimitInput = document.getElementById('f-usageLimit');
+
+        const usageLimitPerUserInput = document.getElementById('f-usageLimitPerUser');
+
+        const isActiveInput = document.getElementById('f-isActive');
+
+        const maxDiscountWrapper = document.getElementById('maxDiscountWrapper');
+
+
+        let currentMode = 'add';
+
+        let currentCouponId = null;
+
+        let isSubmitting = false;
+
+
+
+        // --------------------------------------------------
+        // Modal
+        // --------------------------------------------------
+
+        function openModal(mode, coupon = null) {
+
+            currentMode = mode;
+
+            currentCouponId = coupon ? coupon._id : null;
+
+            form.reset();
+
+
+            // Default values
+
+            discountTypeInput.value = 'percentage';
+
+            minOrderInput.value = '0';
+
+            usageLimitInput.value = '0';
+
+            usageLimitPerUserInput.value = '1';
+
+            isActiveInput.value = 'true';
+
+
+            clearAllErrors();
+
+
+            if (mode === 'add') {
+
+                document.getElementById('modalTitle').textContent = 'Add Coupon';
+
+            }
+
+
+            if (mode === 'edit' && coupon) {
+
+                document.getElementById('modalTitle').textContent = 'Edit Coupon';
+
+
+                codeInput.value = coupon.code || '';
+
+                descriptionInput.value = coupon.description || '';
+
+                discountTypeInput.value = coupon.discountType || 'percentage';
+
+                discountValueInput.value = coupon.discountValue ?? '';
+
+                maxDiscountInput.value = coupon.maxDiscountAmount ?? '';
+
+                minOrderInput.value = coupon.minOrderAmount ?? 0;
+
+                usageLimitInput.value = coupon.usageLimit ?? 0;
+
+                usageLimitPerUserInput.value = coupon.usageLimitPerUser ?? 1;
+
+                isActiveInput.value = coupon.isActive ? 'true' : 'false';
+
+
+                if (coupon.expiryDate) {
+
+                    const date = new Date(coupon.expiryDate);
+
+                    const localDate = new Date(
+                        date.getTime() - date.getTimezoneOffset() * 60000
+                    );
+
+                    expiryInput.value = localDate
+                        .toISOString()
+                        .slice(0, 16);
+
+                }
+
+            }
+
+
+            updateMaxDiscountVisibility();
+
+
+            document
+                .getElementById('couponModal')
+                .classList
+                .add('show');
+
+
+            document.body.style.overflow = 'hidden';
+
+        }
+
+
+
+        function closeModal() {
+
+            document
+                .getElementById('couponModal')
+                .classList
+                .remove('show');
+
+
+            document.body.style.overflow = '';
+
+            currentCouponId = null;
+
+        }
+
+
+
+        // --------------------------------------------------
+        // Close on backdrop
+        // --------------------------------------------------
+
+        document
+            .getElementById('couponModal')
+            .addEventListener('click', function (e) {
+
+                if (e.target === this) {
+
+                    closeModal();
+
+                }
+
+            });
+
+
+
+        // --------------------------------------------------
+        // Error helpers
+        // --------------------------------------------------
+
+        function showFieldError(id, message) {
+
+            const el = document.getElementById(id);
+
+            el.textContent = message;
+
+            el.classList.remove('hidden');
+
+        }
+
+
+        function clearFieldError(id) {
+
+            const el = document.getElementById(id);
+
+            el.textContent = '';
+
+            el.classList.add('hidden');
+
+        }
+
+
+        function clearAllErrors() {
+
+            [
+                'e-code',
+                'e-description',
+                'e-discountValue',
+                'e-maxDiscountAmount',
+                'e-minOrderAmount',
+                'e-expiryDate',
+                'e-usageLimit',
+                'e-usageLimitPerUser'
+            ].forEach(clearFieldError);
+
+        }
+
+
+
+        // --------------------------------------------------
+        // Discount type
+        // --------------------------------------------------
+
+        function updateMaxDiscountVisibility() {
+
+            if (discountTypeInput.value === 'percentage') {
+
+                maxDiscountWrapper.classList.remove('hidden');
+
+            } else {
+
+                maxDiscountWrapper.classList.add('hidden');
+
+                maxDiscountInput.value = '';
+
+                clearFieldError('e-maxDiscountAmount');
+
+            }
+
+        }
+
+
+        discountTypeInput.addEventListener(
+            'change',
+            updateMaxDiscountVisibility
+        );
+
+
+
+        // --------------------------------------------------
+        // Validation
+        // --------------------------------------------------
+
+        function validateCode() {
+
+            const value = codeInput.value.trim();
+
+
+            if (!value) {
+
+                showFieldError(
+                    'e-code',
+                    'Coupon code is required'
+                );
+
+                codeInput.style.borderColor = '#ef4444';
+
+                return false;
+
+            }
+
+
+            if (value.length < 2) {
+
+                showFieldError(
+                    'e-code',
+                    'Coupon code must be at least 2 characters'
+                );
+
+                codeInput.style.borderColor = '#ef4444';
+
+                return false;
+
+            }
+
+
+            if (value.length > 50) {
+
+                showFieldError(
+                    'e-code',
+                    'Coupon code must be under 50 characters'
+                );
+
+                codeInput.style.borderColor = '#ef4444';
+
+                return false;
+
+            }
+
+
+            clearFieldError('e-code');
+
+            codeInput.style.borderColor = '';
+
+            return true;
+
+        }
+
+
+
+        function validateDescription() {
+
+            if (descriptionInput.value.length > 500) {
+
+                showFieldError(
+                    'e-description',
+                    'Description must be under 500 characters'
+                );
+
+                descriptionInput.style.borderColor = '#ef4444';
+
+                return false;
+
+            }
+
+
+            clearFieldError('e-description');
+
+            descriptionInput.style.borderColor = '';
+
+            return true;
+
+        }
+
+
+
+        function validateDiscountValue() {
+
+            const value = Number(discountValueInput.value);
+
+
+            if (
+                discountValueInput.value === '' ||
+                !Number.isFinite(value) ||
+                value < 0
+            ) {
+
+                showFieldError(
+                    'e-discountValue',
+                    'Enter a valid discount value'
+                );
+
+                discountValueInput.style.borderColor = '#ef4444';
+
+                return false;
+
+            }
+
+
+            if (
+                discountTypeInput.value === 'percentage' &&
+                value > 100
+            ) {
+
+                showFieldError(
+                    'e-discountValue',
+                    'Percentage discount cannot exceed 100%'
+                );
+
+                discountValueInput.style.borderColor = '#ef4444';
+
+                return false;
+
+            }
+
+
+            clearFieldError('e-discountValue');
+
+            discountValueInput.style.borderColor = '';
+
+            return true;
+
+        }
+
+
+
+        function validateMaxDiscount() {
+
+            if (discountTypeInput.value !== 'percentage') {
+
+                clearFieldError('e-maxDiscountAmount');
+
+                return true;
+
+            }
+
+
+            if (maxDiscountInput.value === '') {
+
+                clearFieldError('e-maxDiscountAmount');
+
+                return true;
+
+            }
+
+
+            const value = Number(maxDiscountInput.value);
+
+
+            if (!Number.isFinite(value) || value < 0) {
+
+                showFieldError(
+                    'e-maxDiscountAmount',
+                    'Enter a valid maximum discount'
+                );
+
+                maxDiscountInput.style.borderColor = '#ef4444';
+
+                return false;
+
+            }
+
+
+            clearFieldError('e-maxDiscountAmount');
+
+            maxDiscountInput.style.borderColor = '';
+
+            return true;
+
+        }
+
+
+
+        function validateMinOrder() {
+
+            const value = Number(minOrderInput.value);
+
+
+            if (!Number.isFinite(value) || value < 0) {
+
+                showFieldError(
+                    'e-minOrderAmount',
+                    'Minimum order amount cannot be negative'
+                );
+
+                minOrderInput.style.borderColor = '#ef4444';
+
+                return false;
+
+            }
+
+
+            clearFieldError('e-minOrderAmount');
+
+            minOrderInput.style.borderColor = '';
+
+            return true;
+
+        }
+
+
+
+        function validateExpiry() {
+
+            if (!expiryInput.value) {
+
+                showFieldError(
+                    'e-expiryDate',
+                    'Expiry date is required'
+                );
+
+                expiryInput.style.borderColor = '#ef4444';
+
+                return false;
+
+            }
+
+
+            const expiryDate = new Date(expiryInput.value);
+
+
+            if (Number.isNaN(expiryDate.getTime())) {
+
+                showFieldError(
+                    'e-expiryDate',
+                    'Enter a valid expiry date'
+                );
+
+                expiryInput.style.borderColor = '#ef4444';
+
+                return false;
+
+            }
+
+
+            if (expiryDate <= new Date()) {
+
+                showFieldError(
+                    'e-expiryDate',
+                    'Expiry date must be in the future'
+                );
+
+                expiryInput.style.borderColor = '#ef4444';
+
+                return false;
+
+            }
+
+
+            clearFieldError('e-expiryDate');
+
+            expiryInput.style.borderColor = '';
+
+            return true;
+
+        }
+
+
+
+        function validateUsageLimit() {
+
+            const value = Number(usageLimitInput.value);
+
+
+            if (
+                !Number.isInteger(value) ||
+                value < 0
+            ) {
+
+                showFieldError(
+                    'e-usageLimit',
+                    'Usage limit must be a whole number'
+                );
+
+                usageLimitInput.style.borderColor = '#ef4444';
+
+                return false;
+
+            }
+
+
+            clearFieldError('e-usageLimit');
+
+            usageLimitInput.style.borderColor = '';
+
+            return true;
+
+        }
+
+
+
+        function validateUsageLimitPerUser() {
+
+            const value = Number(usageLimitPerUserInput.value);
+
+
+            if (
+                !Number.isInteger(value) ||
+                value < 0
+            ) {
+
+                showFieldError(
+                    'e-usageLimitPerUser',
+                    'Per-user limit must be a whole number'
+                );
+
+                usageLimitPerUserInput.style.borderColor = '#ef4444';
+
+                return false;
+
+            }
+
+
+            clearFieldError('e-usageLimitPerUser');
+
+            usageLimitPerUserInput.style.borderColor = '';
+
+            return true;
+
+        }
+
+
+
+        // --------------------------------------------------
+        // Live validation
+        // --------------------------------------------------
+
+        codeInput.addEventListener('blur', validateCode);
+
+        codeInput.addEventListener('input', () => {
+
+            codeInput.value = codeInput.value.toUpperCase();
+
+            clearFieldError('e-code');
+
+        });
+
+
+        descriptionInput.addEventListener(
+            'input',
+            validateDescription
+        );
+
+
+        discountValueInput.addEventListener(
+            'blur',
+            validateDiscountValue
+        );
+
+
+        maxDiscountInput.addEventListener(
+            'blur',
+            validateMaxDiscount
+        );
+
+
+        minOrderInput.addEventListener(
+            'blur',
+            validateMinOrder
+        );
+
+
+        expiryInput.addEventListener(
+            'blur',
+            validateExpiry
+        );
+
+
+        usageLimitInput.addEventListener(
+            'blur',
+            validateUsageLimit
+        );
+
+
+        usageLimitPerUserInput.addEventListener(
+            'blur',
+            validateUsageLimitPerUser
+        );
+
+
+
+        // --------------------------------------------------
+        // Submit
+        // --------------------------------------------------
+
+        form.addEventListener(
+            'submit',
+            async (e) => {
+
+                e.preventDefault();
+
+
+                if (isSubmitting) return;
+
+
+                isSubmitting = true;
+
+
+                const valid =
+                    validateCode() &&
+                    validateDescription() &&
+                    validateDiscountValue() &&
+                    validateMaxDiscount() &&
+                    validateMinOrder() &&
+                    validateExpiry() &&
+                    validateUsageLimit() &&
+                    validateUsageLimitPerUser();
+
+
+                if (!valid) {
+
+                    isSubmitting = false;
+
+                    return;
+
+                }
+
+
+                const submitBtn =
+                    document.getElementById('submitBtn');
+
+
+                const originalText =
+                    submitBtn.textContent;
+
+
+                submitBtn.disabled = true;
+
+                submitBtn.textContent = 'Saving...';
+
+
+
+                // Build JSON payload
+
+                const payload = {
+
+                    code: codeInput.value.trim().toUpperCase(),
+
+                    description:
+                        descriptionInput.value.trim(),
+
+                    discountType:
+                        discountTypeInput.value,
+
+                    discountValue:
+                        Number(discountValueInput.value),
+
+                    minOrderAmount:
+                        Number(minOrderInput.value),
+
+                    expiryDate:
+                        new Date(expiryInput.value).toISOString(),
+
+                    usageLimit:
+                        Number(usageLimitInput.value),
+
+                    usageLimitPerUser:
+                        Number(usageLimitPerUserInput.value),
+
+                    isActive:
+                        isActiveInput.value === 'true'
+
+                };
+
+
+                if (
+                    discountTypeInput.value === 'percentage' &&
+                    maxDiscountInput.value !== ''
+                ) {
+
+                    payload.maxDiscountAmount =
+                        Number(maxDiscountInput.value);
+
+                }
+
+
+
+                try {
+
+
+                    const url =
+                        currentMode === 'edit'
+                            ? `/admin/coupon/${currentCouponId}`
+                            : '/admin/coupon';
+
+
+                    const method =
+                        currentMode === 'edit'
+                            ? 'PATCH'
+                            : 'POST';
+
+
+
+                    const response =
+                        await fetch(url, {
+
+                            method,
+
+                            headers: {
+
+                                'Content-Type':
+                                    'application/json',
+
+                                'Accept':
+                                    'application/json'
+
+                            },
+
+                            credentials:
+                                'same-origin',
+
+                            body:
+                                JSON.stringify(payload)
+
+                        });
+
+
+
+                    const result =
+                        await response.json();
+
+
+
+                    if (!response.ok) {
+
+                        showFieldError(
+                            'e-code',
+                            result.message ||
+                            'Something went wrong'
+                        );
+
+                        codeInput.style.borderColor =
+                            '#ef4444';
+
+
+                        isSubmitting = false;
+
+                        submitBtn.disabled = false;
+
+                        submitBtn.textContent =
+                            originalText;
+
+                        return;
+
+                    }
+
+
+
+                    window.location.reload();
+
+
+                } catch (err) {
+
+                    console.error(err);
+
+
+                    showFieldError(
+                        'e-code',
+                        'Network error — please check your connection and try again'
+                    );
+
+
+                    codeInput.style.borderColor =
+                        '#ef4444';
+
+
+                    isSubmitting = false;
+
+                    submitBtn.disabled = false;
+
+                    submitBtn.textContent =
+                        originalText;
+
+                }
+
+            }
+        );
+
+
+
+        // --------------------------------------------------
+        // Delete Coupon
+        // --------------------------------------------------
+
+        async function deleteCoupon(id, code) {
+
+            const confirmed =
+                confirm(`Delete coupon "${code}"?`);
+
+
+            if (!confirmed) return;
+
+
+            try {
+
+
+                const response =
+                    await fetch(
+                        `/admin/coupon/${id}`,
+                        {
+
+                            method: 'DELETE',
+
+                            headers: {
+
+                                'Accept':
+                                    'application/json'
+
+                            },
+
+                            credentials:
+                                'same-origin'
+
+                        }
+                    );
+
+
+                const result =
+                    await response.json();
+
+
+                if (!response.ok) {
+
+                    alert(
+                        result.message ||
+                        'Unable to delete coupon'
+                    );
+
+                    return;
+
+                }
+
+
+                window.location.reload();
+
+
+            } catch (err) {
+
+                console.error(err);
+
+                alert(
+                    'Network error — please try again'
+                );
+
+            }
+
+        }
+
+
+    </script>
+
+
+</body>
+
+</html>

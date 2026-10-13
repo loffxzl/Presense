@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-// --- Variant ---
+
 const variantSchema = z.object({
   size: z.string().trim().min(1, 'Size is required'),
   stock: z.coerce.number().int('Stock must be a whole number').min(0, 'Stock cannot be negative').default(0),
@@ -28,7 +28,8 @@ export const productSchema = z.object({
 
   description: z.string().trim().optional().or(z.literal('')),
 
-  brand: z.string().trim().min(1, 'Brand is required'),
+
+  brandId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid brand'),
 
   categoryId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid category'),
 

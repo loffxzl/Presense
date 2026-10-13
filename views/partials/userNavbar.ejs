@@ -1,11 +1,4 @@
-<!-- views/partials/userNavbar.ejs
-     Expects (all optional, default to safe values if omitted):
-       - search      (string)  current search term
-       - categoryId  (string)  current category filter, for preserving state through search
-       - sortby      (string)  current sort, for preserving state through search
-       - minPrice    (number/string) current min price filter
-       - maxPrice    (number/string) current max price filter
--->
+
 <nav class="border-b border-stone-200 bg-white/80 backdrop-blur-md sticky top-0 z-50 px-6 py-4">
     <div class="max-w-7xl mx-auto flex justify-between items-center">
 
@@ -18,6 +11,7 @@
             <a href="/products" class="text-sm font-medium text-scentCharcoal hover:text-scentAmber transition-colors duration-300">Products</a>
             <a href="/about" class="text-sm font-medium text-scentCharcoal hover:text-scentAmber transition-colors duration-300">About</a>
             <a href="/auth/logout" class="text-sm font-medium text-scentCharcoal hover:text-scentAmber transition-colors duration-300">Logout</a>
+
         </div>
 
         <div class="flex items-center space-x-5">
@@ -32,6 +26,11 @@
 
             <a href="/cart" aria-label="Cart" class="text-scentCharcoal hover:text-scentAmber transition-colors duration-300 relative">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                <% if (typeof cartCount !== 'undefined' && cartCount > 0) { %>
+                    <span class="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-scentAmber text-scentCharcoal text-[10px] font-bold flex items-center justify-center leading-none">
+                        <%= cartCount > 99 ? '99+' : cartCount %>
+                    </span>
+                <% } %>
             </a>
 
             <div class="w-px h-6 bg-stone-300 hidden sm:block mx-1"></div>

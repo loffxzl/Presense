@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> | Presense Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .font-serif { font-family: Georgia, Cambria, "Times New Roman", Times, serif; }
+    </style>
+</head>
+<body class="bg-gray-50 flex min-h-screen">
+
+    <%- include('../partials/adminSidebar', { adminName, activePage: 'orders' }) %>
+
+    <main class="flex-1 ml-64 p-8">
+        <div class="mb-6">
+            <h2 class="text-2xl font-bold">Order Management</h2>
+            <p class="text-gray-400 text-sm mt-1">Total: <%= totalOrders %> orders</p>
+        </div>
+
+        <!-- Filters -->
+        <form action="/admin/orders" method="GET" class="flex gap-3 mb-6 flex-wrap">
+            <input type="text" name="search" value="<%= search %>"
+                   placeholder="Search by order code or customer name..."
+                   class="border p-2 rounded-lg flex-1 min-w-[240px] text-sm focus:outline-none focus:border-gray-400"/>
+
+            <select name="status" class="border p-2 rounded-lg text-sm focus:outline-none focus:border-gray-400">
+                <option value="">All statuses</option>
+                <% Object.entries(statusLabels).forEach(([value, label]) => { %>
+                    <option value="<%= value %>" <%= status === value ? 'selected' : '' %>><%= label %></option>
+                <% }) %>
+            </select>
+
+            <button type="submit" class="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-700 transition">
+                Filter
+            </button>
+            <% if (search || status) { %>
+                <a href="/admin/orders" class="border px-4 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition">
+                    Clear
+                </a>
+            <% } %>
+        </form>
+
+        <!-- Table -->
+        <% if (orders.length === 0) { %>
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm py-16 text-center text-gray-400 text-sm">
+                No orders found
+            </div>
+        <% } else { %>
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="bg-gray-50 border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-500">
+                            <th class="px-5 py-3 font-semibold">Order</th>
+                            <th class="px-5 py-3 font-semibold">Customer</th>
+                            <th class="px-5 py-3 font-semibold">Items</th>
+                            <th class="px-5 py-3 font-semibold">Total</th>
+                            <th class="px-5 py-3 font-semibold">Status</th>
+                            <th class="px-5 py-3 font-semibold">Placed</th>
+                            <th class="px-5 py-3 font-semibold"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% orders.forEach((order) => { %>
+                            <tr class="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition">
+                                <td class="px-5 py-3 font-medium text-gray-900"><%= order.orderCode %></td>
+                                <td class="px-5 py-3 text-gray-600">
+                                    <%= order.userId?.name || order.shippingAddress.fullName %>
+                                </td>
+                                <td class="px-5 py-3 text-gray-500"><%= order.items.length %></td>
+                                <td class="px-5 py-3 text-gray-900">&#8377;<%= order.pricing.total.toFixed(2) %></td>
+                                <td class="px-5 py-3">
+                                    <span class="inline-flex items-center gap-1.5 text-xs font-medium text-gray-600">
+                                        <span class="w-1.5 h-1.5 rounded-full
+                                            <%= order.status === 'delivered' || order.status === 'refunded' ? 'bg-green-500'
+                                                : order.status === 'cancelled' || order.status === 'return_rejected' ? 'bg-red-400'
+                                                : order.status.startsWith('return') ? 'bg-amber-500'
+                                                : 'bg-gray-400' %>"></span>
+                                        <%= statusLabels[order.status] %>
+                                    </span>
+                                </td>
+                                <td class="px-5 py-3 text-gray-400">
+                                    <%= new Date(order.createdAt).toLocaleDateString('en-IN') %>
+                                </td>
+                                <td class="px-5 py-3 text-right">
+                                    <a href="/admin/orders/<%= order._id %>"
+                                       class="text-xs font-medium px-3 py-1.5 rounded-md border border-gray-200 text-gray-700 hover:bg-gray-50 transition">
+                                        View
+                                    </a>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        <% } %>
+
+        <!-- Pagination -->
+        <% if (totalPages > 1) { %>
+            <div class="flex items-center gap-2 mt-6">
+                <% if (currentPage > 1) { %>
+                    <a href="/admin/orders?page=<%= currentPage - 1 %>&search=<%= search %>&status=<%= status %>"
+                       class="px-3 py-1 rounded bg-gray-200 text-gray-700 text-sm hover:bg-gray-300 transition">&lt;</a>
+                <% } %>
+                <% for (let i = 1; i <= totalPages; i++) { %>
+                    <a href="/admin/orders?page=<%= i %>&search=<%= search %>&status=<%= status %>"
+                       class="px-3 py-1 rounded text-sm transition
+                           <%= i === currentPage ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300' %>">
+                        <%= i %>
+                    </a>
+                <% } %>
+                <% if (currentPage < totalPages) { %>
+                    <a href="/admin/orders?page=<%= currentPage + 1 %>&search=<%= search %>&status=<%= status %>"
+                       class="px-3 py-1 rounded bg-gray-200 text-gray-700 text-sm hover:bg-gray-300 transition">&gt;</a>
+                <% } %>
+            </div>
+        <% } %>
+    </main>
+
+</body>
+</html>

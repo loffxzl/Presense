@@ -29,5 +29,5 @@ export const editCategory = catchAsync(async (req, res) => {
 export const deleteCategory = catchAsync(async (req, res) => {
   const id = req.params.id;
   await categoryService.deleteCategory(id);
-  return res.redirect('/admin/category'); // delete stays a plain form POST, no modal/inline error needed
+  return res.redirect('/admin/category'); 
 });

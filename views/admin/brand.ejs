@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> | Presense Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .font-serif { font-family: Georgia, Cambria, "Times New Roman", Times, serif; }
+        .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:100; display:none; align-items:center; justify-content:center; padding:16px; }
+        .modal-overlay.show { display:flex; }
+        .modal-box { background:#fff; border-radius:16px; padding:32px; width:100%; max-width:480px; }
+    </style>
+</head>
+<body class="bg-gray-50 flex min-h-screen">
+
+    <%- include('../partials/adminSidebar', { adminName, activePage: 'brands' }) %>
+
+    <main class="flex-1 ml-64 p-8">
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h2 class="text-2xl font-bold">Brand Management</h2>
+                <p class="text-gray-400 text-sm mt-1">Total: <%= totalBrands %> brands</p>
+            </div>
+            <button onclick="openModal('add')"
+                    class="bg-gray-900 text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-yellow-600 transition">
+                + Add Brand
+            </button>
+        </div>
+
+        <form action="/admin/brands" method="GET" class="flex gap-3 mb-6">
+            <input type="text" name="search" value="<%= search %>"
+                   placeholder="Search brands..."
+                   class="border p-2 rounded-lg flex-1 text-sm focus:outline-none focus:border-gray-400"/>
+            <button type="submit" class="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-700 transition">
+                Search
+            </button>
+            <% if (search) { %>
+                <a href="/admin/brands" class="border px-4 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition">
+                    Clear
+                </a>
+            <% } %>
+        </form>
+
+        <% if (brands.length === 0) { %>
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm py-16 text-center text-gray-400 text-sm">
+                No brands found
+            </div>
+        <% } else { %>
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="bg-gray-50 border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-500">
+                            <th class="px-5 py-3 font-semibold">Name</th>
+                            <th class="px-5 py-3 font-semibold">Description</th>
+                            <th class="px-5 py-3 font-semibold">Status</th>
+                            <th class="px-5 py-3 font-semibold"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% brands.forEach((brand) => { %>
+                            <tr class="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition">
+                                <td class="px-5 py-3 font-medium text-gray-900"><%= brand.name %></td>
+                                <td class="px-5 py-3 text-gray-500 max-w-sm truncate"><%= brand.description || '—' %></td>
+                                <td class="px-5 py-3">
+                                    <span class="inline-flex items-center gap-1.5 text-xs font-medium text-gray-500">
+                                        <span class="w-1.5 h-1.5 rounded-full <%= brand.status === 'active' ? 'bg-green-500' : 'bg-gray-400' %>"></span>
+                                        <%= brand.status %>
+                                    </span>
+                                </td>
+                                <td class="px-5 py-3 text-right">
+                                    <div class="flex gap-2 justify-end">
+                                        <button onclick='openModal("edit", <%- JSON.stringify(brand) %>)'
+                                                class="text-xs font-medium px-3 py-1.5 rounded-md border border-gray-200 text-gray-700 hover:bg-gray-50 transition">
+                                            Edit
+                                        </button>
+                                        <button onclick="deleteBrand('<%= brand._id %>', '<%= brand.name %>')"
+                                                class="text-xs font-medium px-3 py-1.5 rounded-md border border-gray-200 text-red-600 hover:bg-red-50 hover:border-red-200 transition">
+                                            Delete
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        <% } %>
+
+        <% if (totalPages > 1) { %>
+            <div class="flex items-center gap-2 mt-6">
+                <% if (currentPage > 1) { %>
+                    <a href="/admin/brands?page=<%= currentPage - 1 %>&search=<%= search %>"
+                       class="px-3 py-1 rounded bg-gray-200 text-gray-700 text-sm hover:bg-gray-300 transition">&lt;</a>
+                <% } %>
+                <% for (let i = 1; i <= totalPages; i++) { %>
+                    <a href="/admin/brands?page=<%= i %>&search=<%= search %>"
+                       class="px-3 py-1 rounded text-sm transition
+                           <%= i === currentPage ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300' %>">
+                        <%= i %>
+                    </a>
+                <% } %>
+                <% if (currentPage < totalPages) { %>
+                    <a href="/admin/brands?page=<%= currentPage + 1 %>&search=<%= search %>"
+                       class="px-3 py-1 rounded bg-gray-200 text-gray-700 text-sm hover:bg-gray-300 transition">&gt;</a>
+                <% } %>
+            </div>
+        <% } %>
+    </main>
+
+    <!-- Add/Edit Modal -->
+    <div id="brandModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="font-serif text-xl font-bold text-gray-900" id="modalTitle">Add Brand</h2>
+                <button onclick="closeModal()" type="button" class="text-gray-400 hover:text-gray-600">✕</button>
+            </div>
+
+            <form id="brandForm" novalidate>
+                <input type="hidden" id="f-id" value="">
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-2">Name</label>
+                        <input type="text" id="f-name" required
+                               class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none text-sm">
+                        <p class="text-red-500 text-xs mt-1 hidden" id="e-name"></p>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-2">Description</label>
+                        <textarea id="f-description" rows="3" maxlength="500"
+                                  class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none text-sm resize-none"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-2">Status</label>
+                        <select id="f-status"
+                                class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none text-sm">
+                            <option value="active">Active</option>
+                            <option value="unlisted">Unlisted</option>
+                        </select>
+                    </div>
+                </div>
+
+                <p class="text-red-500 text-xs mt-3 hidden" id="formError"></p>
+
+                <div class="flex gap-3 mt-6">
+                    <button type="submit"
+                            class="flex-1 bg-gray-900 text-white py-3 rounded-lg text-sm font-semibold hover:bg-yellow-600 transition">
+                        Save
+                    </button>
+                    <button type="button" onclick="closeModal()"
+                            class="px-6 py-3 rounded-lg text-sm font-semibold border border-gray-200 text-gray-500 hover:bg-gray-50 transition">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('brandForm');
+        const nameInput = document.getElementById('f-name');
+        const descriptionInput = document.getElementById('f-description');
+        const statusInput = document.getElementById('f-status');
+        const idInput = document.getElementById('f-id');
+
+        const showFieldError = (id, msg) => {
+            const el = document.getElementById(id);
+            el.textContent = msg;
+            el.classList.remove('hidden');
+        };
+        const clearFieldError = (id) => {
+            const el = document.getElementById(id);
+            el.textContent = '';
+            el.classList.add('hidden');
+        };
+
+        function openModal(mode, brand = null) {
+            form.reset();
+            clearFieldError('e-name');
+            clearFieldError('formError');
+            idInput.value = '';
+
+            if (mode === 'add') {
+                document.getElementById('modalTitle').textContent = 'Add Brand';
+            } else if (mode === 'edit' && brand) {
+                document.getElementById('modalTitle').textContent = 'Edit Brand';
+                idInput.value = brand._id;
+                nameInput.value = brand.name || '';
+                descriptionInput.value = brand.description || '';
+                statusInput.value = brand.status || 'active';
+            }
+
+            document.getElementById('brandModal').classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            document.getElementById('brandModal').classList.remove('show');
+            document.body.style.overflow = '';
+        }
+
+        document.getElementById('brandModal').addEventListener('click', function (e) {
+            if (e.target === this) closeModal();
+        });
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            clearFieldError('e-name');
+            clearFieldError('formError');
+
+            const name = nameInput.value.trim();
+            if (name.length < 2) {
+                showFieldError('e-name', 'Name must be at least 2 characters');
+                return;
+            }
+
+            const payload = {
+                name,
+                description: descriptionInput.value.trim(),
+                status: statusInput.value
+            };
+
+            const id = idInput.value;
+            const url = id ? `/admin/brands/${id}` : '/admin/brands';
+            const method = id ? 'PATCH' : 'POST';
+
+            const submitBtn = form.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Saving...';
+
+            try {
+                const res = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify(payload)
+                });
+                const result = await res.json();
+
+                if (!res.ok) {
+                    showFieldError('formError', result.message || 'Something went wrong');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Save';
+                    return;
+                }
+
+                window.location.reload();
+            } catch (err) {
+                showFieldError('formError', 'Network error — please try again');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Save';
+            }
+        });
+
+        async function deleteBrand(id, name) {
+            if (!confirm(`Delete ${name}?`)) return;
+
+            try {
+                const res = await fetch(`/admin/brands/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Accept': 'application/json' },
+                    credentials: 'same-origin'
+                });
+                const result = await res.json();
+
+                if (!res.ok) {
+                    alert(result.message || 'Could not delete this brand');
+                    return;
+                }
+
+                window.location.reload();
+            } catch (err) {
+                alert('Network error — please try again');
+            }
+        }
+    </script>
+
+</body>
+</html>
