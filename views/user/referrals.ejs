@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> | Presense</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { theme: { extend: {
+            colors: { scentCream: '#F8F6F1', scentAmber: '#C9A227', scentCharcoal: '#171717', scentEarth: '#705335' },
+            fontFamily: { serif: ['Georgia', 'serif'], sans: ['Inter', 'system-ui', 'sans-serif'] }
+        } } }
+    </script>
+    <style>* { box-sizing: border-box; } body { background: #F8F6F1; } ::selection { background: #C9A227; color: #171717; }</style>
+</head>
+<body class="text-scentCharcoal font-sans antialiased">
+
+    <div class="sticky top-0 z-50"><%- include('../partials/userNavbar') %></div>
+
+    <header class="relative overflow-hidden bg-scentCharcoal">
+        <div class="absolute -top-40 -left-40 h-[500px] w-[500px] rounded-full bg-scentAmber/10 blur-3xl pointer-events-none"></div>
+        <div class="relative max-w-[1100px] mx-auto px-5 sm:px-8 lg:px-12 py-12 lg:py-16">
+            <div class="flex items-center gap-3 mb-5">
+                <span class="w-[34px] h-px bg-scentAmber"></span>
+                <span class="text-[10px] sm:text-xs uppercase tracking-[0.28em] text-scentAmber font-semibold">Your Account</span>
+            </div>
+            <h1 class="font-serif text-4xl sm:text-5xl text-white leading-[1.05] tracking-tight">Refer &amp; earn</h1>
+            <% if (settings.enabled) { %>
+                <p class="mt-4 max-w-xl text-sm sm:text-base leading-relaxed text-stone-400">
+                    Share your code. When a friend joins and receives their first order, you get
+                    <span class="text-scentAmber font-semibold">&#8377;<%= settings.referrerReward %></span>
+                    and they get <span class="text-scentAmber font-semibold">&#8377;<%= settings.refereeReward %></span>
+                    in their wallet.
+                </p>
+            <% } else { %>
+                <p class="mt-4 max-w-xl text-sm sm:text-base text-stone-400">The referral program is paused right now. Your code will work again when it returns.</p>
+            <% } %>
+        </div>
+    </header>
+
+    <main class="max-w-[1100px] mx-auto px-5 sm:px-8 lg:px-12 py-10 lg:py-14 space-y-8">
+
+        <section class="bg-white border border-stone-200 rounded-2xl p-6 sm:p-8 shadow-sm">
+            <p class="text-[10px] uppercase tracking-[0.2em] text-stone-400 font-semibold mb-3">Your referral code</p>
+            <div class="flex flex-wrap items-center gap-3">
+                <span id="codeText" class="font-serif text-3xl tracking-[0.18em] text-scentCharcoal"><%= code %></span>
+                <button type="button" onclick="copyText('codeText','Code copied')" class="px-4 py-2 text-xs font-semibold uppercase tracking-wide border border-stone-300 rounded-full hover:border-scentAmber hover:text-scentEarth transition">Copy code</button>
+            </div>
+
+            <p class="text-[10px] uppercase tracking-[0.2em] text-stone-400 font-semibold mt-6 mb-2">Invite link</p>
+            <div class="flex flex-wrap items-center gap-3">
+                <span id="linkText" class="text-sm text-stone-600 break-all"><%= link %></span>
+                <button type="button" onclick="copyText('linkText','Link copied')" class="px-4 py-2 text-xs font-semibold uppercase tracking-wide bg-scentCharcoal text-white rounded-full hover:bg-scentAmber hover:text-scentCharcoal transition">Copy link</button>
+            </div>
+            <p id="copyMsg" class="text-xs text-green-600 mt-3 h-4"></p>
+
+            <% if (settings.minOrderValue > 0) { %>
+                <p class="text-xs text-stone-400 mt-2">Reward applies when your friend's first order is worth at least &#8377;<%= settings.minOrderValue %>.</p>
+            <% } %>
+        </section>
+
+        <section class="grid grid-cols-3 gap-4">
+            <div class="bg-white border border-stone-200 rounded-2xl p-5 text-center shadow-sm">
+                <p class="font-serif text-2xl font-bold"><%= stats.total %></p>
+                <p class="text-[10px] uppercase tracking-wide text-stone-400 mt-1">Friends joined</p>
+            </div>
+            <div class="bg-white border border-stone-200 rounded-2xl p-5 text-center shadow-sm">
+                <p class="font-serif text-2xl font-bold"><%= stats.rewarded %></p>
+                <p class="text-[10px] uppercase tracking-wide text-stone-400 mt-1">Rewards earned</p>
+            </div>
+            <div class="bg-white border border-stone-200 rounded-2xl p-5 text-center shadow-sm">
+                <p class="font-serif text-2xl font-bold text-scentEarth">&#8377;<%= stats.earned %></p>
+                <p class="text-[10px] uppercase tracking-wide text-stone-400 mt-1">Total earned</p>
+            </div>
+        </section>
+
+        <section class="bg-white border border-stone-200 rounded-2xl shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-stone-100 flex items-center justify-between">
+                <h2 class="font-serif text-lg">Your referrals</h2>
+                <a href="/wallet" class="text-xs font-semibold text-scentEarth hover:underline">View wallet &rarr;</a>
+            </div>
+            <% if (!referrals.length) { %>
+                <p class="px-6 py-10 text-center text-sm text-stone-400">No one has joined with your code yet.</p>
+            <% } else { %>
+                <ul class="divide-y divide-stone-100">
+                    <% referrals.forEach(r => { %>
+                        <li class="px-6 py-4 flex items-center justify-between gap-4">
+                            <div>
+                                <p class="text-sm font-semibold"><%= r.name %></p>
+                                <p class="text-xs text-stone-400">Joined <%= new Date(r.joinedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) %></p>
+                            </div>
+                            <% if (r.status === 'rewarded') { %>
+                                <span class="text-xs font-semibold text-green-700 bg-green-50 border border-green-200 rounded-full px-3 py-1">+&#8377;<%= r.reward %> earned</span>
+                            <% } else if (r.status === 'rejected') { %>
+                                <span class="text-xs font-semibold text-stone-500 bg-stone-100 rounded-full px-3 py-1">Not eligible</span>
+                            <% } else { %>
+                                <span class="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-3 py-1">Waiting for first order</span>
+                            <% } %>
+                        </li>
+                    <% }) %>
+                </ul>
+            <% } %>
+        </section>
+    </main>
+
+    <script>
+        function showCopied(msg) {
+            const el = document.getElementById('copyMsg');
+            el.textContent = msg;
+            setTimeout(() => (el.textContent = ''), 2000);
+        }
+
+        // Works on https/localhost (Clipboard API) and falls back to a hidden
+        // textarea + execCommand everywhere else (plain http, older browsers).
+        function legacyCopy(text) {
+            const t = document.createElement('textarea');
+            t.value = text;
+            t.setAttribute('readonly', '');
+            t.style.position = 'fixed';
+            t.style.top = '0';
+            t.style.opacity = '0';
+            document.body.appendChild(t);
+            t.focus();
+            t.select();
+            t.setSelectionRange(0, t.value.length);
+            let ok = false;
+            try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+            document.body.removeChild(t);
+            return ok;
+        }
+
+        async function copyText(id, msg) {
+            const text = document.getElementById(id).textContent.trim();
+            try {
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(text);
+                    return showCopied(msg);
+                }
+            } catch (e) { /* fall through to legacy copy */ }
+            showCopied(legacyCopy(text) ? msg : 'Press Ctrl/Cmd + C to copy');
+        }
+    </script>
+</body>
+</html>

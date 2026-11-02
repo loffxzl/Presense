@@ -1,5 +1,6 @@
 import express from 'express';
 import { isUserAuthenticated, attachUser } from '../middlewares/auth.js';
+import * as homeController from '../controllers/user/homeController.js';
 import * as profileController from '../controllers/user/profileController.js';
 import * as addressController from '../controllers/user/addressController.js';
 import * as emailController from '../controllers/user/emailController.js';
@@ -8,15 +9,9 @@ import { uploadAvatar } from '../config/multer.js';
 const router = express.Router();
 
 
-router.get('/', attachUser, (req, res) => {
-  if (res.locals.user) return res.redirect('/home');
-  res.render('user/landing', { title: 'Presense' });
-});
+router.get('/', attachUser, homeController.showLanding);
 
-
-router.get('/home', isUserAuthenticated, (req, res) => {
-  res.render('user/home', { title: 'Home' });
-});
+router.get('/home', isUserAuthenticated, homeController.showHome);
 
 
 router.get('/profile', isUserAuthenticated, profileController.getProfilePage);

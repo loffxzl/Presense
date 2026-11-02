@@ -15,8 +15,13 @@ router.get('/logout', authController.logout);
 router.get('/admin/logout', authController.adminLogout);
 
 
-
-router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+router.get('/google', (req, res, next) => {
+  const ref = String(req.query.ref || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12);
+  passport.authenticate('google', {
+    scope: ['profile', 'email'],
+    ...(ref ? { state: `ref:${ref}` } : {})
+  })(req, res, next);
+});
 router.get('/google/callback',
   passport.authenticate('google', { failureRedirect: '/auth/login', session: false }),
   authController.googleCallback

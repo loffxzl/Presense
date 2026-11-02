@@ -1,7 +1,7 @@
 import * as inventoryRepository from '../../repositories/inventoryRepository.js';
 import AppError from '../../utils/AppError.js';
 
-const LOW_STOCK_THRESHOLD = 5; // matches the "Only N left in stock" convention on the product detail page
+const LOW_STOCK_THRESHOLD = 5; 
 
 export const listInventory = async ({ page = 1, limit = 10, search = '', lowStockOnly = false } = {}) => {
     const currentPage = Math.max(1, parseInt(page));

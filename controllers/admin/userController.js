@@ -7,7 +7,7 @@ export const getUserList = async (req, res) => {
     res.render('admin/users', {
       ...data,
       title: 'User Management',
-      adminName: req.session.admin.name  // pass it explicitly
+      adminName: req.session.admin.name  
     });
   } catch (err) {
     console.error('getUserList error: ', err.message);

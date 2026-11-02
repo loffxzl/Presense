@@ -18,7 +18,10 @@ export const getUserList = async ({ page = 1, limit = 10, search = '' }) => {
 
   const totalPages = Math.ceil(totalUsers / limit);
 
-  return { users, currentPage, totalPages, totalUsers, search };
+  const activeUsers = await userRepository.countUsers({status:'active'});
+
+
+  return { users, currentPage, totalPages, totalUsers, search, activeUsers };
 };
 
 export const toggleUserStatus = async (id) => {

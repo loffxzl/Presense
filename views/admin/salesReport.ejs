@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> | Presense Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .font-serif { font-family: Georgia, Cambria, "Times New Roman", Times, serif; }
+    </style>
+</head>
+<body class="bg-gray-50 flex min-h-screen">
+
+    <%- include('../partials/adminSidebar', { adminName, activePage: 'sales' }) %>
+
+    <%
+        const inr = (n) => '₹' + Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+        const maxTrend = trend.reduce((m, t) => Math.max(m, t.total), 0) || 1;
+        const periodLabel = (p) => {
+            // "2026-10-26" -> "26 Oct 2026", "2026-10" -> "Oct 2026"
+            const parts = p.split('-');
+            const d = new Date(Date.UTC(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2] || 1)));
+            return parts.length === 3
+                ? d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })
+                : d.toLocaleDateString('en-IN', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+        };
+    %>
+
+    <main class="flex-1 ml-64 p-8 min-w-0">
+        <div class="mb-6 flex items-end justify-between flex-wrap gap-4">
+            <div>
+                <h2 class="text-2xl font-bold">Sales Report</h2>
+                <p class="text-gray-500 text-sm mt-1">Period: <span class="font-medium text-gray-800"><%= range.label %></span></p>
+            </div>
+            <div class="flex gap-2">
+                <a href="/admin/sales/download/pdf?<%= qs %>"
+                   class="px-4 py-2 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-100 transition">
+                    Download PDF
+                </a>
+                <a href="/admin/sales/download/excel?<%= qs %>"
+                   class="px-4 py-2 rounded-lg bg-gray-900 text-white text-sm font-medium hover:bg-yellow-600 transition">
+                    Download Excel
+                </a>
+            </div>
+        </div>
+
+        <!-- FILTERS -->
+        <form action="/admin/sales" method="GET" id="filterForm"
+              class="bg-white border border-gray-200 rounded-xl p-4 mb-6 flex flex-wrap items-end gap-4">
+            <div>
+                <label class="block text-xs font-semibold text-gray-500 uppercase mb-1.5">Report</label>
+                <select name="type" id="typeSelect" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-500">
+                    <option value="daily"  <%= range.type === 'daily'  ? 'selected' : '' %>>Daily</option>
+                    <option value="weekly" <%= range.type === 'weekly' ? 'selected' : '' %>>Weekly</option>
+                    <option value="yearly" <%= range.type === 'yearly' ? 'selected' : '' %>>Yearly</option>
+                    <option value="custom" <%= range.type === 'custom' ? 'selected' : '' %>>Custom range</option>
+                </select>
+            </div>
+
+            <div id="singleDateField">
+                <label class="block text-xs font-semibold text-gray-500 uppercase mb-1.5" id="singleDateLabel">Date</label>
+                <input type="date" name="date" value="<%= range.date %>"
+                       class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-500">
+            </div>
+
+            <div id="rangeFields" class="flex gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase mb-1.5">From</label>
+                    <input type="date" name="from" value="<%= range.from %>"
+                           class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase mb-1.5">To</label>
+                    <input type="date" name="to" value="<%= range.to %>"
+                           class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-500">
+                </div>
+            </div>
+
+            <button type="submit" class="bg-gray-900 text-white px-5 py-2 rounded-lg text-sm hover:bg-yellow-600 transition">Apply</button>
+            <a href="/admin/sales" class="border border-gray-300 px-4 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition">Reset</a>
+
+            <% if (error) { %>
+                <p class="w-full text-sm text-red-600"><%= error %></p>
+            <% } %>
+        </form>
+
+        <!-- SUMMARY CARDS -->
+        <div class="grid grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
+            <div class="bg-white border border-gray-200 rounded-xl p-5">
+                <p class="text-[11px] uppercase tracking-wide text-gray-400 font-semibold">Total sales</p>
+                <p class="font-serif text-3xl font-bold text-gray-900 mt-2"><%= summary.orders %></p>
+                <p class="text-xs text-gray-400 mt-1">orders</p>
+            </div>
+            <div class="bg-white border border-gray-200 rounded-xl p-5">
+                <p class="text-[11px] uppercase tracking-wide text-gray-400 font-semibold">Order amount</p>
+                <p class="font-serif text-3xl font-bold text-gray-900 mt-2"><%= inr(summary.total) %></p>
+                <p class="text-xs text-gray-400 mt-1">avg <%= inr(summary.averageOrder) %> per order</p>
+            </div>
+            <div class="bg-white border border-gray-200 rounded-xl p-5">
+                <p class="text-[11px] uppercase tracking-wide text-gray-400 font-semibold">Discount / coupons</p>
+                <p class="font-serif text-3xl font-bold text-emerald-700 mt-2">−<%= inr(summary.discount) %></p>
+                <p class="text-xs text-gray-400 mt-1"><%= summary.couponOrders %> order<%= summary.couponOrders === 1 ? '' : 's' %> used a coupon</p>
+            </div>
+            <div class="bg-white border border-gray-200 rounded-xl p-5">
+                <p class="text-[11px] uppercase tracking-wide text-gray-400 font-semibold">Refunded</p>
+                <p class="font-serif text-3xl font-bold text-red-600 mt-2"><%= inr(summary.refunded) %></p>
+                <p class="text-xs text-gray-400 mt-1">back to customer wallets</p>
+            </div>
+            <div class="bg-gray-900 rounded-xl p-5 xl:col-span-2">
+                <p class="text-[11px] uppercase tracking-wide text-gray-400 font-semibold">Net sales</p>
+                <p class="font-serif text-3xl font-bold text-white mt-2"><%= inr(summary.net) %></p>
+                <p class="text-xs text-gray-400 mt-1">order amount minus refunds &middot; subtotal <%= inr(summary.subtotal) %> + tax <%= inr(summary.tax) %> + shipping <%= inr(summary.shipping) %> &minus; discount <%= inr(summary.discount) %></p>
+            </div>
+        </div>
+
+        <% if (summary.orders === 0) { %>
+            <div class="bg-white rounded-xl border border-gray-200 py-16 text-center text-gray-400 text-sm">
+                No sales in this period.
+            </div>
+        <% } else { %>
+
+            <div class="grid xl:grid-cols-2 gap-6 mb-6">
+                <!-- BREAKDOWN -->
+                <% if (trend.length) { %>
+                    <section class="bg-white border border-gray-200 rounded-xl p-5">
+                        <h3 class="font-semibold text-gray-900 mb-4"><%= range.trendFormat === '%Y-%m' ? 'By month' : 'By day' %></h3>
+                        <div class="space-y-3 max-h-[420px] overflow-y-auto pr-1">
+                            <% trend.forEach((t) => { %>
+                                <div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-700"><%= periodLabel(t.period) %></span>
+                                        <span class="font-medium text-gray-900"><%= inr(t.total) %>
+                                            <span class="text-xs text-gray-400 font-normal">&middot; <%= t.orders %> order<%= t.orders === 1 ? '' : 's' %><% if (t.discount > 0) { %> &middot; −<%= inr(t.discount) %><% } %></span>
+                                        </span>
+                                    </div>
+                                    <div class="h-1.5 bg-gray-100 rounded mt-1.5">
+                                        <div class="h-1.5 bg-gray-900 rounded" style="width: <%= Math.max(2, Math.round((t.total / maxTrend) * 100)) %>%"></div>
+                                    </div>
+                                </div>
+                            <% }) %>
+                        </div>
+                    </section>
+                <% } %>
+
+                <!-- COUPONS -->
+                <section class="bg-white border border-gray-200 rounded-xl p-5 <%= trend.length ? '' : 'xl:col-span-2' %>">
+                    <h3 class="font-semibold text-gray-900 mb-4">Coupon deductions</h3>
+                    <% if (coupons.length === 0) { %>
+                        <p class="text-sm text-gray-400">No coupons were used in this period.</p>
+                    <% } else { %>
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="text-left text-xs uppercase tracking-wide text-gray-400 border-b border-gray-200">
+                                    <th class="pb-2 font-semibold">Code</th>
+                                    <th class="pb-2 font-semibold text-right">Orders</th>
+                                    <th class="pb-2 font-semibold text-right">Discount given</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% coupons.forEach((c) => { %>
+                                    <tr class="border-b border-gray-100 last:border-0">
+                                        <td class="py-2.5 font-mono text-xs font-semibold text-gray-900"><%= c.code %></td>
+                                        <td class="py-2.5 text-right text-gray-600"><%= c.orders %></td>
+                                        <td class="py-2.5 text-right font-medium text-emerald-700">−<%= inr(c.discount) %></td>
+                                    </tr>
+                                <% }) %>
+                            </tbody>
+                        </table>
+                    <% } %>
+                </section>
+            </div>
+
+            <!-- ORDERS -->
+            <section class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                <div class="px-5 py-4 border-b border-gray-200">
+                    <h3 class="font-semibold text-gray-900">Orders in this period</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="bg-gray-50 border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-500">
+                                <th class="px-5 py-3 font-semibold">Order</th>
+                                <th class="px-5 py-3 font-semibold">Date</th>
+                                <th class="px-5 py-3 font-semibold">Customer</th>
+                                <th class="px-5 py-3 font-semibold">Payment</th>
+                                <th class="px-5 py-3 font-semibold">Coupon</th>
+                                <th class="px-5 py-3 font-semibold text-right">Discount</th>
+                                <th class="px-5 py-3 font-semibold text-right">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% orders.forEach((o) => { %>
+                                <tr class="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition">
+                                    <td class="px-5 py-3">
+                                        <a href="/admin/orders/<%= o._id %>" class="font-medium text-gray-900 hover:text-yellow-700"><%= o.orderCode %></a>
+                                        <p class="text-[11px] text-gray-400"><%= String(o.status).replace(/_/g, ' ') %></p>
+                                    </td>
+                                    <td class="px-5 py-3 text-gray-500">
+                                        <%= new Date(o.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' }) %>
+                                    </td>
+                                    <td class="px-5 py-3 text-gray-600"><%= o.shippingAddress ? o.shippingAddress.fullName : '—' %></td>
+                                    <td class="px-5 py-3 text-gray-500"><%= o.paymentMethod || 'COD' %></td>
+                                    <td class="px-5 py-3 font-mono text-xs text-gray-600"><%= o.couponCode || '—' %></td>
+                                    <td class="px-5 py-3 text-right <%= o.pricing.discount > 0 ? 'text-emerald-700' : 'text-gray-400' %>">
+                                        <%= o.pricing.discount > 0 ? '−' + inr(o.pricing.discount) : '—' %>
+                                    </td>
+                                    <td class="px-5 py-3 text-right font-semibold text-gray-900">
+                                        <%= inr(o.pricing.total) %>
+                                        <% if (o.refundedAmount > 0) { %>
+                                            <p class="text-[11px] font-normal text-red-500">refunded <%= inr(o.refundedAmount) %></p>
+                                        <% } %>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <% if (totalPages > 1) { %>
+                <div class="flex items-center gap-2 mt-6">
+                    <% if (currentPage > 1) { %>
+                        <a href="/admin/sales?<%= qs %>&page=<%= currentPage - 1 %>" class="px-3 py-1 rounded bg-gray-200 text-gray-700 text-sm hover:bg-gray-300 transition">&lt;</a>
+                    <% } %>
+                    <% for (let i = 1; i <= totalPages; i++) { %>
+                        <a href="/admin/sales?<%= qs %>&page=<%= i %>"
+                           class="px-3 py-1 rounded text-sm transition <%= i === currentPage ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300' %>">
+                            <%= i %>
+                        </a>
+                    <% } %>
+                    <% if (currentPage < totalPages) { %>
+                        <a href="/admin/sales?<%= qs %>&page=<%= currentPage + 1 %>" class="px-3 py-1 rounded bg-gray-200 text-gray-700 text-sm hover:bg-gray-300 transition">&gt;</a>
+                    <% } %>
+                </div>
+            <% } %>
+        <% } %>
+
+        <p class="text-xs text-gray-400 mt-6">
+            Counts non-cancelled orders that are cash on delivery or already paid. Online orders that were started but never paid are not included.
+            Dates use Indian time.
+        </p>
+    </main>
+
+    <script>
+        const typeSelect = document.getElementById('typeSelect');
+        const singleDateField = document.getElementById('singleDateField');
+        const singleDateLabel = document.getElementById('singleDateLabel');
+        const rangeFields = document.getElementById('rangeFields');
+
+        const SINGLE_LABELS = {
+            daily: 'Date',
+            weekly: 'Any day in the week',
+            yearly: 'Any day in the year'
+        };
+
+        function syncFields() {
+            const isCustom = typeSelect.value === 'custom';
+            singleDateField.style.display = isCustom ? 'none' : '';
+            rangeFields.style.display = isCustom ? '' : 'none';
+            if (!isCustom) singleDateLabel.textContent = SINGLE_LABELS[typeSelect.value];
+        }
+
+        typeSelect.addEventListener('change', syncFields);
+        syncFields();
+    </script>
+</body>
+</html>

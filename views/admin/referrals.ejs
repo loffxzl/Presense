@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> | Presense Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>.font-serif { font-family: Georgia, Cambria, "Times New Roman", Times, serif; }</style>
+</head>
+<body class="bg-gray-50 flex min-h-screen">
+
+    <%- include('../partials/adminSidebar', { adminName, activePage: 'referrals' }) %>
+
+    <main class="flex-1 ml-64 p-8">
+        <div class="mb-6 flex items-end justify-between flex-wrap gap-4">
+            <div>
+                <h2 class="text-2xl font-bold">Referrals</h2>
+                <p class="text-gray-400 text-sm mt-1"><%= totals.total %> referral<%= totals.total === 1 ? '' : 's' %> &middot; <%= totals.rewarded %> rewarded</p>
+            </div>
+            <div class="bg-white border border-gray-200 rounded-xl px-5 py-3 shadow-sm">
+                <p class="text-[10px] uppercase tracking-wide text-gray-400 font-semibold">Total paid out</p>
+                <p class="font-serif text-xl font-bold text-gray-900">&#8377;<%= totals.paidOut %></p>
+            </div>
+        </div>
+
+        <% if (saved) { %><div class="mb-4 bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-lg">Settings saved.</div><% } %>
+        <% if (error) { %><div class="mb-4 bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-lg"><%= error %></div><% } %>
+
+        <!-- Settings -->
+        <form action="/admin/referrals/settings" method="POST" class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-semibold">Program settings</h3>
+                <label class="flex items-center gap-2 text-sm cursor-pointer">
+                    <input type="checkbox" name="enabled" <%= settings.enabled ? 'checked' : '' %> class="w-4 h-4 accent-yellow-600">
+                    Program active
+                </label>
+            </div>
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Referrer reward (&#8377;)</label>
+                    <input type="number" min="0" step="1" name="referrerReward" value="<%= settings.referrerReward %>" class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">New user reward (&#8377;)</label>
+                    <input type="number" min="0" step="1" name="refereeReward" value="<%= settings.refereeReward %>" class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Min first order (&#8377;)</label>
+                    <input type="number" min="0" step="1" name="minOrderValue" value="<%= settings.minOrderValue %>" class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Max rewards / referrer</label>
+                    <input type="number" min="0" step="1" name="maxRewardsPerReferrer" value="<%= settings.maxRewardsPerReferrer %>" class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50">
+                </div>
+            </div>
+            <p class="text-xs text-gray-400 mt-3">Rewards are credited to both wallets when the new user's first qualifying order is delivered. Use 0 for "no limit" / "no minimum". Changes apply to future rewards only.</p>
+            <button class="mt-4 bg-gray-900 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-yellow-600 transition">Save settings</button>
+        </form>
+
+        <!-- Filter -->
+        <div class="flex gap-2 mb-4 text-sm">
+            <% [['', 'All'], ['pending', 'Pending'], ['rewarded', 'Rewarded'], ['rejected', 'Rejected']].forEach(([v, l]) => { %>
+                <a href="/admin/referrals?status=<%= v %>" class="px-3 py-1.5 rounded-full border <%= status === v ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400' %>"><%= l %></a>
+            <% }) %>
+        </div>
+
+        <!-- Table -->
+        <div class="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50 text-[11px] uppercase tracking-wide text-gray-400">
+                    <tr>
+                        <th class="text-left px-5 py-3">Referrer</th>
+                        <th class="text-left px-5 py-3">New user</th>
+                        <th class="text-left px-5 py-3">Code</th>
+                        <th class="text-left px-5 py-3">Status</th>
+                        <th class="text-right px-5 py-3">Reward (referrer / new)</th>
+                        <th class="text-left px-5 py-3">Joined</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    <% if (!referrals.length) { %>
+                        <tr><td colspan="6" class="px-5 py-10 text-center text-gray-400">No referrals yet.</td></tr>
+                    <% } %>
+                    <% referrals.forEach(r => { %>
+                        <tr>
+                            <td class="px-5 py-3"><p class="font-medium"><%= r.referrerId?.name || '—' %></p><p class="text-xs text-gray-400"><%= r.referrerId?.email || '' %></p></td>
+                            <td class="px-5 py-3"><p class="font-medium"><%= r.refereeId?.name || '—' %></p><p class="text-xs text-gray-400"><%= r.refereeId?.email || '' %></p></td>
+                            <td class="px-5 py-3 font-mono text-xs"><%= r.code %></td>
+                            <td class="px-5 py-3">
+                                <span class="text-xs font-semibold px-2.5 py-1 rounded-full <%= r.status === 'rewarded' ? 'bg-green-50 text-green-700' : r.status === 'rejected' ? 'bg-gray-100 text-gray-500' : 'bg-amber-50 text-amber-700' %>"><%= r.status %></span>
+                                <% if (r.rejectReason) { %><p class="text-[11px] text-gray-400 mt-1"><%= r.rejectReason %></p><% } %>
+                            </td>
+                            <td class="px-5 py-3 text-right"><%= r.status === 'rewarded' ? '₹' + r.referrerReward + ' / ₹' + r.refereeReward : '—' %></td>
+                            <td class="px-5 py-3 text-gray-500"><%= new Date(r.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) %></td>
+                        </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        </div>
+
+        <% if (totalPages > 1) { %>
+            <div class="flex justify-center gap-2 mt-6 text-sm">
+                <% for (let p = 1; p <= totalPages; p++) { %>
+                    <a href="/admin/referrals?page=<%= p %>&status=<%= status %>" class="px-3 py-1.5 rounded-lg border <%= p === currentPage ? 'bg-gray-900 text-white border-gray-900' : 'bg-white border-gray-200' %>"><%= p %></a>
+                <% } %>
+            </div>
+        <% } %>
+    </main>
+</body>
+</html>

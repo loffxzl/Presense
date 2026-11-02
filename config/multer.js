@@ -3,6 +3,7 @@ import multer from 'multer';
 import multerS3 from 'multer-s3';
 import cloudinary from './cloudinary.js';
 import s3 from './s3.js';
+import AppError from '../utils/AppError.js';
 
 // Cloudinary storage — for user avatars
 const cloudinaryStorage = new CloudinaryStorage({
@@ -27,14 +28,23 @@ const s3Storage = multerS3({
   }
 });
 
-const fileFilter = (req, file, cb) => {
-  const allowed = ['image/jpeg', 'image/png', 'image/webp'];
-  if (allowed.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(new Error('Only JPG, PNG and WebP images are allowed'));
-  }
-};
+// const fileFilter = (req, file, cb) => {
+//   const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+//   if (allowed.includes(file.mimetype)) {
+//     cb(null, true);
+//   } else {
+//     cb(new Error('Only JPG, PNG and WebP images are allowed'));
+//   }
+// };
+
+   const fileFilter = (req, file, cb) => {
+     const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+     if (allowed.includes(file.mimetype)) {
+       cb(null, true);
+     } else {
+       cb(new AppError('Only JPG, PNG and WebP images are allowed', 400));
+     }
+   };
 
 export const uploadAvatar = multer({
   storage: cloudinaryStorage,

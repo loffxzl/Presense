@@ -1,9 +1,23 @@
 import * as orderRepository from '../../repositories/orderRepository.js';
 import * as inventoryRepository from '../../repositories/inventoryRepository.js';
+import * as refundService from '../refundService.js';
 import AppError from '../../utils/AppError.js';
 
 
 const CANCELLABLE_STATUSES = ['pending', 'confirmed'];
+
+
+export const INVOICE_STATUSES = [
+    'shipped',
+    'delivered',
+    'return_requested',
+    'return_approved',
+    'return_rejected',
+    'return_pickup',
+    'return_in_transit',
+    'return_received',
+    'refunded'
+];
 
 export const listOrders = async (userId, { page = 1, limit = 10, search = '' } = {}) => {
     const filter = {};
@@ -30,12 +44,16 @@ export const getOrderForUser = async (orderId, userId) => {
     return order;
 };
 
-
+// Used by downloadInvoice. Same ownership check as getOrderForUser (an order
+// scoped to this user), plus one extra guard: a fully cancelled order has no
+// active items and nothing to bill, so an invoice for it would just be a
+// document showing zero items and a ₹0 total — not useful, so it's blocked
+// rather than silently generating an empty PDF.
 export const getInvoiceOrder = async (orderId, userId) => {
     const order = await orderRepository.findOrderByIdForUser(orderId, userId);
     if (!order) throw new AppError('Order not found', 404);
-    if (order.status === 'cancelled') {
-        throw new AppError('No invoice is available for a cancelled order', 409);
+    if (!INVOICE_STATUSES.includes(order.status)) {
+        throw new AppError('An invoice is available once your order has shipped', 409);
     }
     return order;
 };
@@ -66,14 +84,19 @@ export const cancelOrder = async (userId, orderId, reason = '') => {
         throw new AppError('This order can no longer be cancelled', 409);
     }
 
+    const cancelledItems = [];
     for (const item of order.items) {
         if (item.status === 'active') {
             await restockItem(item, `Order ${order.orderCode} cancelled`);
             item.status = 'cancelled';
             if (reason) item.cancelReason = reason;
             item.cancelledAt = new Date();
+            cancelledItems.push(item);
         }
     }
+
+    // Cancellations are refunded straight away (if the order was paid upfront).
+    await refundService.refundOnCancel(order, cancelledItems);
 
     order.status = 'cancelled';
     if (reason) order.cancelReason = reason;
@@ -101,6 +124,7 @@ export const cancelOrderItem = async (userId, orderId, productId, variantId, rea
     if (reason) item.cancelReason = reason;
     item.cancelledAt = new Date();
 
+    await refundService.refundOnCancel(order, [item]);
 
     if (order.items.every((i) => i.status === 'cancelled')) {
         order.status = 'cancelled';

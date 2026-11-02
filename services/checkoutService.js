@@ -4,9 +4,11 @@ import * as addressService from './user/addressService.js';
 import * as orderRepository from '../repositories/orderRepository.js';
 import * as inventoryRepository from '../repositories/inventoryRepository.js';
 import * as couponRepository from '../repositories/couponRepository.js';
+import * as paymentRepository from '../repositories/paymentRepository.js';
+import * as walletService from './user/walletService.js';
 import AppError from '../utils/AppError.js';
 
-const TAX_RATE = 0.05;             // 5% — set to 0 to disable tax entirely
+const TAX_RATE = 0.05;            
 const FREE_SHIPPING_THRESHOLD = 999;
 const FLAT_SHIPPING_FEE = 49;
 
@@ -17,20 +19,17 @@ const computePricing = (subtotal, discount = 0) => {
     return { subtotal, tax, discount, shippingFee, total };
 };
 
-// Pure — no DB calls, no throwing. Shared by validateCoupon and the
-// available-coupons preview so the "you save ₹X" math is never duplicated.
+
 const calcDiscount = (coupon, subtotal) => {
     if (coupon.discountType === 'percentage') {
         let discountAmount = Math.round(subtotal * (coupon.discountValue / 100));
         if (coupon.maxDiscountAmount) discountAmount = Math.min(discountAmount, coupon.maxDiscountAmount);
         return discountAmount;
     }
-    return Math.min(coupon.discountValue, subtotal); // never discount more than the order is worth
+    return Math.min(coupon.discountValue, subtotal); 
 };
 
-// Re-derives the discount from the coupon's own rules every time — never trusts
-// a discount amount supplied by the client. Used both for the "Apply Coupon"
-// preview and, separately and authoritatively, at actual order placement.
+
 const validateCoupon = async (userId, code, subtotal) => {
     if (!code || !code.trim()) throw new AppError('Please enter a coupon code', 400);
     const normalizedCode = code.trim().toUpperCase();
@@ -54,9 +53,7 @@ const validateCoupon = async (userId, code, subtotal) => {
     return { coupon, discountAmount: calcDiscount(coupon, subtotal) };
 };
 
-// Coupons worth showing the user at checkout — structurally eligible ones
-// (active, not expired, minimum met, global limit not exhausted) further
-// filtered by THIS user's own usage count, with a "you save ₹X" preview attached.
+
 export const getAvailableCoupons = async (userId, subtotal) => {
     if (subtotal <= 0) return [];
 
@@ -90,8 +87,7 @@ export const getCheckoutSummary = async (userId) => {
     return { items: cart.items, addresses, pricing, availableCoupons };
 };
 
-// Preview only — validates the coupon and returns recomputed pricing, but does
-// NOT increment usedCount. Actual redemption only happens on successful order placement.
+
 export const previewCoupon = async (userId, code) => {
     const cart = await cartService.getCartDetails(userId);
     if (cart.items.length === 0) throw new AppError('Your bag is empty', 400);
@@ -102,10 +98,83 @@ export const previewCoupon = async (userId, code) => {
     return { pricing, code: coupon.code };
 };
 
-// NOTE: stock is decremented per item in a loop below, with no Mongo transaction wrapping it.
-// If your DB is a replica set (e.g. MongoDB Atlas), wrap the loop in a session/transaction
-// so a mid-order failure rolls back earlier decrements instead of leaving them applied.
-export const placeOrder = async (userId, addressId, couponCode) => {
+
+
+export const finalizeOrder = async (order) => {
+    const deducted = [];
+
+    try {
+        for (const item of order.items) {
+            const updated = await inventoryRepository.adjustVariantStock(item.productId, item.variantId, -item.quantity);
+            if (!updated) throw new AppError(`"${item.name}" went out of stock — please update your bag`, 409);
+            deducted.push(item);
+
+            const variant = updated.varients.id(item.variantId);
+            await inventoryRepository.createStockLog({
+                productId: item.productId,
+                variantId: item.variantId,
+                size: item.size,
+                type: 'sale',
+                quantityChange: -item.quantity,
+                previousStock: variant.stock + item.quantity,
+                newStock: variant.stock,
+                note: `Order ${order.orderCode} placed (${order.paymentMethod})`,
+                performedBy: null
+            });
+        }
+    } catch (err) {
+        for (const item of deducted) {
+            const restored = await inventoryRepository.adjustVariantStock(item.productId, item.variantId, item.quantity);
+            if (restored) {
+                const variant = restored.varients.id(item.variantId);
+                await inventoryRepository.createStockLog({
+                    productId: item.productId,
+                    variantId: item.variantId,
+                    size: item.size,
+                    type: 'adjustment',
+                    quantityChange: item.quantity,
+                    previousStock: variant.stock - item.quantity,
+                    newStock: variant.stock,
+                    note: `Order ${order.orderCode} failed — stock restored`,
+                    performedBy: null
+                });
+            }
+        }
+        throw err;
+    }
+
+    if (order.couponCode) {
+        await couponRepository.incrementUsage(order.couponCode);
+    }
+
+    await cartService.clearCart(order.userId);
+};
+
+// Idempotency keys come from the browser, so treat them as untrusted input:
+// only a short non-empty string is accepted, anything else is ignored.
+const cleanIdempotencyKey = (key) => {
+    if (typeof key !== 'string') return null;
+    const trimmed = key.trim();
+    return trimmed && trimmed.length <= 100 ? trimmed : null;
+};
+
+export const placeOrder = async (userId, addressId, couponCode, paymentMethod = 'COD', rawIdempotencyKey = null) => {
+    if (!['COD', 'RAZORPAY', 'WALLET'].includes(paymentMethod)) {
+        throw new AppError('Unsupported payment method', 400);
+    }
+
+
+    const idempotencyKey = cleanIdempotencyKey(rawIdempotencyKey);
+    if (idempotencyKey) {
+        const existing = await paymentRepository.findOrderByKey(userId, idempotencyKey);
+        if (existing) {
+            if (existing.paymentMethod !== paymentMethod) {
+                throw new AppError('This checkout was already submitted. Please refresh the page.', 409);
+            }
+            return existing;
+        }
+    }
+
     const cart = await cartService.getCartDetails(userId);
     if (cart.items.length === 0) throw new AppError('Your bag is empty', 400);
 
@@ -118,8 +187,6 @@ export const placeOrder = async (userId, addressId, couponCode) => {
     const address = addresses.find((a) => a._id.toString() === String(addressId));
     if (!address) throw new AppError('Please select a valid delivery address', 400);
 
-    // Re-validate the coupon here even if it was already "applied" client-side —
-    // the client's number is never trusted for the actual charge.
     let discountAmount = 0;
     let appliedCoupon = null;
     if (couponCode) {
@@ -130,28 +197,18 @@ export const placeOrder = async (userId, addressId, couponCode) => {
 
     const pricing = computePricing(cart.subtotal, discountAmount);
 
-    for (const item of cart.items) {
-        const updated = await inventoryRepository.adjustVariantStock(item.productId, item.variantId, -item.quantity);
-        if (!updated) throw new AppError(`"${item.name}" went out of stock — please update your bag`, 409);
-
-        const variant = updated.varients.id(item.variantId);
-        await inventoryRepository.createStockLog({
-            productId: item.productId,
-            variantId: item.variantId,
-            size: item.size,
-            type: 'sale',
-            quantityChange: -item.quantity,
-            previousStock: variant.stock + item.quantity,
-            newStock: variant.stock,
-            note: 'Order placed (COD)',
-            performedBy: null
-        });
+    // Friendly early check. The real, race-proof check is the atomic debit below.
+    if (paymentMethod === 'WALLET') {
+        const balance = await walletService.getBalance(userId);
+        if (balance < pricing.total) {
+            throw new AppError('Your wallet balance is not enough for this order', 409);
+        }
     }
 
     const generateOrderCode = customAlphabet('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', 10);
     const orderCode = `ORD-${generateOrderCode()}`;
 
-    const order = await orderRepository.createOrder({
+    const orderData = {
         userId,
         orderCode,
         items: cart.items.map((i) => ({
@@ -177,17 +234,65 @@ export const placeOrder = async (userId, addressId, couponCode) => {
         },
         pricing,
         couponCode: appliedCoupon ? appliedCoupon.code : undefined,
-        paymentMethod: 'COD',
-        status: 'pending'
-    });
+        paymentMethod,
+        paymentStatus: 'pending',
+        status: 'pending',
+        idempotencyKey: idempotencyKey || undefined
+    };
 
-    // Only increment usage AFTER the order is successfully created — a failed
-    // order (e.g. stock ran out mid-loop) should not consume the coupon.
-    if (appliedCoupon) {
-        await couponRepository.incrementUsage(appliedCoupon.code);
+    let order;
+    try {
+        order = await orderRepository.createOrder(orderData);
+    } catch (err) {
+
+        if (err.code === 11000 && idempotencyKey) {
+            const winner = await paymentRepository.findOrderByKey(userId, idempotencyKey);
+            if (winner) return winner;
+        }
+        throw err;
     }
 
-    await cartService.clearCart(userId);
+
+    if (paymentMethod === 'RAZORPAY') return order;
+
+
+    if (paymentMethod === 'WALLET') {
+        try {
+            await walletService.debitWallet({
+                userId,
+                amount: pricing.total,
+                reason: 'order_payment',
+                orderId: order._id,
+                refKey: `pay:${order._id}`,
+                description: `Payment for order ${order.orderCode}`
+            });
+        } catch (err) {
+            await paymentRepository.deleteUnpaidOrder(order._id, userId);
+            throw err;
+        }
+    }
+
+    try {
+        await finalizeOrder(order);
+    } catch (err) {
+
+        if (paymentMethod === 'WALLET') {
+            await walletService.creditWallet({
+                userId,
+                amount: pricing.total,
+                reason: 'order_payment_reversal',
+                orderId: order._id,
+                refKey: `payfail:${order._id}`,
+                description: `Reversal — order ${order.orderCode} could not be placed`
+            });
+        }
+        await paymentRepository.deleteUnpaidOrder(order._id, userId);
+        throw err;
+    }
+
+    if (paymentMethod === 'WALLET') {
+        return (await paymentRepository.markPaidByWallet(order._id)) || order;
+    }
 
     return order;
 };

@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> | Presense</title>
+
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='25' fill='%23171717'/><text x='50%' y='68%' font-family='Georgia, serif' font-size='55' font-weight='bold' fill='%23C9A227' text-anchor='middle'>P</text></svg>">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        scentCream: '#F8F6F1',
+                        scentAmber: '#C9A227',
+                        scentCharcoal: '#171717',
+                        scentEarth: '#705335'
+                    },
+                    fontFamily: {
+                        serif: ['Georgia', 'serif'],
+                        sans: ['Inter', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        * { box-sizing: border-box; }
+        body { background: #F8F6F1; }
+        ::selection { background: #C9A227; color: #171717; }
+    </style>
+</head>
+<body class="text-scentCharcoal font-sans antialiased">
+
+    <div class="sticky top-0 z-50">
+        <%- include('../partials/userNavbar') %>
+    </div>
+
+    <!-- HERO -->
+    <header class="relative overflow-hidden bg-scentCharcoal">
+        <div class="absolute -top-40 -left-40 h-[500px] w-[500px] rounded-full bg-scentAmber/10 blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-48 right-0 h-[550px] w-[550px] rounded-full bg-white/5 blur-3xl pointer-events-none"></div>
+
+        <div class="relative max-w-[1100px] mx-auto px-5 sm:px-8 lg:px-12 py-12 lg:py-16">
+            <div class="flex items-center gap-3 mb-5">
+                <span class="w-[34px] h-px bg-scentAmber"></span>
+                <span class="text-[10px] sm:text-xs uppercase tracking-[0.28em] text-scentAmber font-semibold">Your Account</span>
+            </div>
+            <h1 class="font-serif text-4xl sm:text-5xl text-white leading-[1.05] tracking-tight">Your wallet</h1>
+            <p class="mt-4 max-w-xl text-sm sm:text-base leading-relaxed text-stone-400">
+                Refunds for cancelled and returned orders land here, ready to use on your next purchase.
+            </p>
+        </div>
+    </header>
+
+    <main class="max-w-[1100px] mx-auto px-5 sm:px-8 lg:px-12 py-10 lg:py-14">
+
+        <div class="grid lg:grid-cols-[1fr_1.4fr] gap-6 mb-10">
+            <!-- Balance -->
+            <section class="bg-white border border-stone-200 rounded-xl p-6 sm:p-8">
+                <p class="text-[10px] uppercase tracking-[0.25em] text-scentAmber font-semibold mb-3">Available balance</p>
+                <p class="font-serif text-5xl text-stone-900">&#8377;<span id="balanceValue"><%= balance %></span></p>
+                <p class="text-xs text-stone-400 mt-3">Use it at checkout by choosing "Presense Wallet".</p>
+            </section>
+
+            <!-- Add money -->
+            <section class="bg-white border border-stone-200 rounded-xl p-6 sm:p-8">
+                <p class="text-[10px] uppercase tracking-[0.25em] text-scentAmber font-semibold mb-4">Add money</p>
+
+                <div class="flex flex-wrap gap-2 mb-4">
+                    <% [500, 1000, 2000, 5000].forEach((preset) => { %>
+                        <button type="button" data-preset="<%= preset %>"
+                                class="preset-btn px-4 py-2 rounded-lg border border-stone-200 text-sm text-stone-700 hover:border-scentAmber transition">
+                            &#8377;<%= preset %>
+                        </button>
+                    <% }) %>
+                </div>
+
+                <div class="flex gap-3">
+                    <input type="number" id="topupAmount" min="10" max="50000" step="1" placeholder="Enter amount (₹10 – ₹50,000)"
+                           class="flex-1 px-4 py-3 bg-white border border-stone-200 rounded-lg text-sm focus:outline-none focus:border-scentAmber focus:ring-1 focus:ring-scentAmber transition">
+                    <button type="button" id="topupBtn"
+                            class="px-6 py-3 rounded-lg bg-scentCharcoal text-white text-[10px] font-semibold uppercase tracking-[0.2em] hover:bg-scentAmber hover:text-scentCharcoal transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
+                        Add
+                    </button>
+                </div>
+                <p id="topupMessage" class="text-xs mt-3 min-h-[16px] text-stone-500">Demo mode: Razorpay test payments only, no real money is charged.</p>
+            </section>
+        </div>
+
+        <!-- History -->
+        <h2 class="font-serif text-2xl text-stone-900 mb-4">History</h2>
+
+        <% if (transactions.length === 0) { %>
+            <div class="bg-white border border-stone-200 rounded-xl py-16 text-center px-6">
+                <p class="text-[10px] uppercase tracking-[0.25em] text-scentAmber font-semibold mb-3">No activity</p>
+                <p class="text-sm text-stone-500">Refunds, top-ups and wallet payments will show up here.</p>
+            </div>
+        <% } else { %>
+            <%
+                const reasonLabels = {
+                    refund_cancel: 'Refund — cancelled order',
+                    refund_return: 'Refund — returned order',
+                    order_payment: 'Paid for an order',
+                    order_payment_reversal: 'Payment reversed',
+                    topup: 'Wallet top-up',
+                    referral_reward: 'Referral reward'
+                };
+            %>
+            <div class="bg-white border border-stone-200 rounded-xl divide-y divide-stone-100">
+                <% transactions.forEach((t) => { %>
+                    <div class="flex items-center justify-between gap-4 p-5">
+                        <div class="min-w-0">
+                            <p class="text-sm font-medium text-stone-900"><%= reasonLabels[t.reason] || t.reason %></p>
+                            <p class="text-xs text-stone-400 mt-1">
+                                <%= new Date(t.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) %>
+                                <% if (t.orderId && t.orderId.orderCode) { %>
+                                    &middot; <a href="/orders/<%= t.orderId._id %>" class="underline hover:text-scentAmber"><%= t.orderId.orderCode %></a>
+                                <% } %>
+                            </p>
+                        </div>
+                        <div class="text-right shrink-0">
+                            <p class="font-serif text-lg <%= t.type === 'credit' ? 'text-emerald-700' : 'text-stone-900' %>">
+                                <%= t.type === 'credit' ? '+' : '−' %>&#8377;<%= t.amount %>
+                            </p>
+                            <% if (t.balanceAfter !== undefined && t.balanceAfter !== null) { %>
+                                <p class="text-[10px] text-stone-400 mt-0.5">Balance &#8377;<%= t.balanceAfter %></p>
+                            <% } %>
+                        </div>
+                    </div>
+                <% }) %>
+            </div>
+        <% } %>
+
+        <% if (totalPages > 1) { %>
+            <div class="flex items-center justify-center gap-2 mt-8">
+                <% if (currentPage > 1) { %>
+                    <a href="/wallet?page=<%= currentPage - 1 %>" class="px-3 py-2 rounded-lg border border-stone-200 bg-white text-sm hover:border-scentAmber transition">&lt;</a>
+                <% } %>
+                <% for (let i = 1; i <= totalPages; i++) { %>
+                    <a href="/wallet?page=<%= i %>"
+                       class="px-3.5 py-2 rounded-lg text-sm transition <%= i === currentPage ? 'bg-scentCharcoal text-white' : 'border border-stone-200 bg-white hover:border-scentAmber' %>">
+                        <%= i %>
+                    </a>
+                <% } %>
+                <% if (currentPage < totalPages) { %>
+                    <a href="/wallet?page=<%= currentPage + 1 %>" class="px-3 py-2 rounded-lg border border-stone-200 bg-white text-sm hover:border-scentAmber transition">&gt;</a>
+                <% } %>
+            </div>
+        <% } %>
+    </main>
+
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script>
+        const topupAmount = document.getElementById('topupAmount');
+        const topupBtn = document.getElementById('topupBtn');
+        const topupMessage = document.getElementById('topupMessage');
+
+        function setMessage(text, kind) {
+            topupMessage.textContent = text;
+            topupMessage.className = 'text-xs mt-3 min-h-[16px] ' +
+                (kind === 'error' ? 'text-red-600' : kind === 'success' ? 'text-emerald-700' : 'text-stone-500');
+        }
+
+        document.querySelectorAll('.preset-btn').forEach((btn) => {
+            btn.addEventListener('click', () => { topupAmount.value = btn.dataset.preset; });
+        });
+
+        topupBtn.addEventListener('click', async () => {
+            const amount = Math.floor(Number(topupAmount.value));
+            if (!Number.isFinite(amount) || amount < 10 || amount > 50000) {
+                return setMessage('Enter an amount between ₹10 and ₹50,000.', 'error');
+            }
+
+            topupBtn.disabled = true;
+            setMessage('Opening payment…');
+
+            try {
+                const res = await fetch('/wallet/topup/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ amount })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Could not start payment');
+
+                const rzp = new Razorpay({
+                    key: data.keyId,
+                    amount: data.amount,
+                    currency: data.currency,
+                    name: 'Presense',
+                    description: 'Wallet top-up',
+                    order_id: data.razorpayOrderId,
+                    theme: { color: '#171717' },
+                    handler: async (response) => {
+                        setMessage('Verifying payment…');
+                        try {
+                            const vRes = await fetch('/wallet/topup/verify', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+                                credentials: 'same-origin',
+                                body: JSON.stringify({
+                                    razorpay_order_id: response.razorpay_order_id,
+                                    razorpay_payment_id: response.razorpay_payment_id,
+                                    razorpay_signature: response.razorpay_signature
+                                })
+                            });
+                            const vData = await vRes.json();
+                            if (!vRes.ok) throw new Error(vData.message || 'Payment verification failed');
+                            window.location.reload();
+                        } catch (err) {
+                            setMessage(err.message, 'error');
+                            topupBtn.disabled = false;
+                        }
+                    },
+                    modal: {
+                        ondismiss: () => {
+                            topupBtn.disabled = false;
+                            setMessage('Payment cancelled — nothing was added.');
+                        }
+                    }
+                });
+
+                rzp.on('payment.failed', (resp) => {
+                    setMessage(resp.error && resp.error.description
+                        ? `Payment failed: ${resp.error.description}`
+                        : 'Payment failed. You can retry in the window.', 'error');
+                });
+
+                rzp.open();
+            } catch (err) {
+                setMessage(err.message || 'Network error — please try again', 'error');
+                topupBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
