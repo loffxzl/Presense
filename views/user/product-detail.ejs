@@ -34,17 +34,11 @@
         }
         .vial-fill { position: absolute; bottom: 0; left: 0; right: 0; background: #D4AF37; }
 
+        /* Zoom lens: on hover, the main image is magnified and panned
+           based on cursor position relative to the image bounds. */
         .zoom-container { cursor: zoom-in; }
         .zoom-container img { transition: transform 0.1s ease-out; }
         .zoom-container.zoomed img { cursor: zoom-out; }
-
-        .wishlist-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-        .wishlist-btn.pulse #wishlistIcon { animation: wishlistPulse 0.35s ease; }
-        @keyframes wishlistPulse {
-            0% { transform: scale(1); }
-            40% { transform: scale(1.25); }
-            100% { transform: scale(1); }
-        }
 
         @media (prefers-reduced-motion: reduce) {
             * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
@@ -63,10 +57,10 @@
                 <li><a href="/" class="hover:text-scentAmber transition-colors duration-300">Home</a></li>
                 <li>/</li>
                 <li><a href="/products" class="hover:text-scentAmber transition-colors duration-300">Fragrances</a></li>
-                <% if (product.categoryId && product.categoryId.name) { %>
+                <% if (category && category.name) { %>
                     <li>/</li>
                     <li>
-                        <a href="/products?categoryId=<%= product.categoryId._id %>" class="hover:text-scentAmber transition-colors duration-300"><%= product.categoryId.name %></a>
+                        <a href="/products?categoryId=<%= category._id %>" class="hover:text-scentAmber transition-colors duration-300"><%= category.name %></a>
                     </li>
                 <% } %>
                 <li>/</li>
@@ -101,33 +95,8 @@
 
             <!-- Details -->
             <div>
-                <div class="flex items-start justify-between gap-4">
-                    <div>
-                        <span class="text-xs uppercase tracking-widest text-stone-400 font-semibold"><%= product.brand %></span>
-                        <h1 class="font-serif text-3xl mt-2 mb-3"><%= product.name %></h1>
-                    </div>
-
-                    <!-- WISHLIST HEART -->
-                    <button
-                        type="button"
-                        id="wishlistBtn"
-                        class="wishlist-btn shrink-0 w-11 h-11 rounded-full bg-white border border-stone-200 shadow-sm flex items-center justify-center hover:scale-110 transition-transform duration-200 mt-1"
-                        data-product-id="<%= product._id %>"
-                        data-wishlisted="<%= isWishlisted %>"
-                        aria-label="<%= isWishlisted ? 'Remove from wishlist' : 'Add to wishlist' %>"
-                    >
-                        <svg
-                            id="wishlistIcon"
-                            class="w-5 h-5 transition-colors duration-200"
-                            viewBox="0 0 24 24"
-                            fill="<%= isWishlisted ? '#FF0000' : 'none' %>"
-                            stroke="<%= isWishlisted ? '#FF0000' : '#57534e' %>"
-                            stroke-width="2"
-                        >
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 21s-6.716-4.35-9.428-8.06C.29 9.771 1.02 5.9 4.318 4.51 6.86 3.44 9.6 4.39 12 7c2.4-2.61 5.14-3.56 7.682-2.49 3.298 1.39 4.028 5.26 1.746 8.43C18.716 16.65 12 21 12 21z"/>
-                        </svg>
-                    </button>
-                </div>
+                <span class="text-xs uppercase tracking-widest text-stone-400 font-semibold"><%= product.brand %></span>
+                <h1 class="font-serif text-3xl mt-2 mb-3"><%= product.name %></h1>
 
                 <!-- Ratings -->
                 <div class="flex items-center gap-2 mb-4">
@@ -145,8 +114,8 @@
                 </div>
 
                 <%
-                    const activeOffer = (product.offer || []).find(o => o.isActive && new Date(o.expiryDate) > new Date());
-                    const discountPercent = activeOffer ? activeOffer.discountPercent : 0;
+                    // best of product offer / category offer, decided on the server
+                    const discountPercent = offer ? offer.percent : 0;
                 %>
 
                 <!-- Variant / size selector -->
@@ -179,22 +148,12 @@
                     <p id="stockMessage" class="text-xs mt-2"></p>
                 </div>
 
-                <!-- Quantity -->
-                <div class="flex items-center gap-3 mb-4">
-                    <span class="text-xs uppercase tracking-widest text-stone-400 font-semibold">Qty</span>
-                    <div class="flex items-center border border-stone-200 rounded-sm">
-                        <button type="button" id="qtyMinus" class="w-9 h-9 text-scentCharcoal hover:bg-stone-50 transition-colors duration-200" aria-label="Decrease quantity">–</button>
-                        <span id="qtyValue" class="w-10 text-center text-sm font-mono">1</span>
-                        <button type="button" id="qtyPlus" class="w-9 h-9 text-scentCharcoal hover:bg-stone-50 transition-colors duration-200" aria-label="Increase quantity">+</button>
-                    </div>
-                </div>
-
                 <!-- Add to cart -->
                 <button id="addToCartBtn" type="button"
                         class="w-full py-3.5 rounded-sm text-sm font-semibold uppercase tracking-widest bg-scentCharcoal text-white hover:bg-scentAmber hover:text-scentCharcoal transition-colors duration-300 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-scentCharcoal disabled:hover:text-white">
                     Add to Cart
                 </button>
-                <p id="addToCartMessage" class="text-xs mt-2 hidden"></p>
+                <p id="cartError" class="text-xs text-red-500 mt-2 hidden"></p>
 
                 <% if (product.description) { %>
                     <div class="mt-8 pt-8 border-t border-stone-100">
@@ -233,9 +192,8 @@
                 <h2 class="font-serif text-xl mb-6">You may also like</h2>
                 <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     <% similarProduct.forEach((rp) => {
-                        const rpVariants = rp.varients || [];
-                        const rpPrices = rpVariants.map(v => v.salePrice).filter(p => typeof p === 'number');
-                        const rpLowest = rpPrices.length ? Math.min(...rpPrices) : null;
+                        const rpPricing = (typeof similarPricing !== 'undefined' && similarPricing[String(rp._id)]) || {};
+                        const rpLowest = typeof rpPricing.price === 'number' ? rpPricing.price : null;
                     %>
                         <a href="/products/<%= rp.slug %>" class="group flex flex-col">
                             <div class="bg-stone-50 rounded-md p-4 h-48 flex items-center justify-center mb-3 border border-stone-100 group-hover:shadow-md transition-shadow duration-300">
@@ -248,7 +206,12 @@
                             <span class="text-xs text-stone-400 uppercase tracking-wider"><%= rp.brand %></span>
                             <h3 class="text-sm font-medium text-stone-800 group-hover:text-scentAmber transition-colors duration-300 truncate"><%= rp.name %></h3>
                             <% if (rpLowest !== null) { %>
-                                <span class="text-sm font-semibold mt-1">₹<%= rpLowest.toLocaleString('en-IN') %></span>
+                                <span class="text-sm font-semibold mt-1">
+                                    ₹<%= rpLowest.toLocaleString('en-IN') %>
+                                    <% if (rpPricing.offerPercent > 0 && rpPricing.salePrice > rpLowest) { %>
+                                        <span class="ml-1 text-xs font-normal text-stone-400 line-through">₹<%= rpPricing.salePrice.toLocaleString('en-IN') %></span>
+                                    <% } %>
+                                </span>
                             <% } %>
                         </a>
                     <% }) %>
@@ -262,12 +225,10 @@
     </footer>
 
     <script>
-        const productId = <%- JSON.stringify(product._id) %>;
         const variants = <%- JSON.stringify(product.varients || []) %>;
         const discountPercent = <%= discountPercent || 0 %>;
         let selectedIndex = variants.findIndex(v => v.stock > 0);
-        if (selectedIndex === -1) selectedIndex = 0;
-        let quantity = 1;
+        if (selectedIndex === -1) selectedIndex = 0; // all sold out — still show first for reference
 
         const currentPriceEl = document.getElementById('currentPrice');
         const originalPriceEl = document.getElementById('originalPrice');
@@ -275,26 +236,26 @@
         const savedAmountEl = document.getElementById('savedAmount');
         const stockMessageEl = document.getElementById('stockMessage');
         const addToCartBtn = document.getElementById('addToCartBtn');
-        const addToCartMessageEl = document.getElementById('addToCartMessage');
         const variantButtons = document.querySelectorAll('.variant-btn');
-        const qtyValueEl = document.getElementById('qtyValue');
-        const qtyMinusBtn = document.getElementById('qtyMinus');
-        const qtyPlusBtn = document.getElementById('qtyPlus');
 
         function formatPrice(n) {
-            return '₹' + Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            return '$' + Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
 
         function renderVariant() {
             const v = variants[selectedIndex];
             if (!v) return;
 
+            // salePrice is the standing selling price (already discounted vs basePrice/MRP).
+            // An active offer, if any, discounts further off the salePrice.
             const finalPrice = discountPercent > 0
                 ? v.salePrice - (v.salePrice * discountPercent / 100)
                 : v.salePrice;
 
             currentPriceEl.textContent = formatPrice(finalPrice);
 
+            // Show basePrice (MRP) struck through whenever it's actually higher
+            // than what the customer pays — same pattern as Amazon/Nykaa etc.
             if (v.basePrice > finalPrice) {
                 originalPriceEl.textContent = formatPrice(v.basePrice);
                 originalPriceEl.classList.remove('hidden');
@@ -304,17 +265,13 @@
                 discountBadgeEl.classList.remove('hidden');
 
                 const savedRupees = (v.basePrice - finalPrice).toFixed(2);
-                savedAmountEl.textContent = `You save ₹${Number(savedRupees).toLocaleString('en-IN')}`;
+                savedAmountEl.textContent = `You save $${Number(savedRupees).toLocaleString('en-IN')}`;
                 savedAmountEl.classList.remove('hidden');
             } else {
                 originalPriceEl.classList.add('hidden');
                 discountBadgeEl.classList.add('hidden');
                 savedAmountEl.classList.add('hidden');
             }
-
-            quantity = v.stock > 0 ? 1 : 0;
-            qtyValueEl.textContent = quantity;
-            updateQtyButtonStates();
 
             if (v.stock === 0) {
                 stockMessageEl.textContent = 'Sold out';
@@ -342,87 +299,70 @@
                     btn.classList.add('border-stone-200', 'text-scentCharcoal');
                 }
             });
-
-            hideAddToCartMessage();
         }
 
         function selectVariant(index) {
-            if (variants[index].stock === 0) return;
+            if (variants[index].stock === 0) return; // guard, though the button is already disabled
             selectedIndex = index;
             renderVariant();
         }
 
-        function updateQtyButtonStates() {
-            const v = variants[selectedIndex];
-            qtyMinusBtn.disabled = quantity <= 1;
-            qtyPlusBtn.disabled = !v || quantity >= v.stock;
-            qtyMinusBtn.classList.toggle('opacity-30', qtyMinusBtn.disabled);
-            qtyPlusBtn.classList.toggle('opacity-30', qtyPlusBtn.disabled);
-        }
+        const userId = '<%= (typeof user !== "undefined" && user) ? user._id : "" %>';
+        const productId = '<%= product._id %>';
 
-        qtyMinusBtn.addEventListener('click', () => {
-            if (quantity <= 1) return;
-            quantity -= 1;
-            qtyValueEl.textContent = quantity;
-            updateQtyButtonStates();
-        });
+        const cartErrorEl = document.getElementById('cartError');
 
-        qtyPlusBtn.addEventListener('click', () => {
-            const v = variants[selectedIndex];
-            if (!v || quantity >= v.stock) return;
-            quantity += 1;
-            qtyValueEl.textContent = quantity;
-            updateQtyButtonStates();
-        });
-
-        function showAddToCartMessage(text, isError) {
-            addToCartMessageEl.textContent = text;
-            addToCartMessageEl.className = `text-xs mt-2 ${isError ? 'text-red-500' : 'text-green-600'}`;
-            addToCartMessageEl.classList.remove('hidden');
-        }
-
-        function hideAddToCartMessage() {
-            addToCartMessageEl.classList.add('hidden');
-        }
-
-        let isAddingToCart = false;
         addToCartBtn.addEventListener('click', async () => {
-            if (isAddingToCart) return;
             const v = variants[selectedIndex];
             if (!v || v.stock === 0) return;
 
-            isAddingToCart = true;
+            if (!userId) {
+                window.location.href = '/auth/login';
+                return;
+            }
+
+            cartErrorEl.classList.add('hidden');
             const originalText = addToCartBtn.textContent;
             addToCartBtn.disabled = true;
             addToCartBtn.textContent = 'Adding...';
-            hideAddToCartMessage();
 
             try {
-                const response = await fetch('/cart', {
+                const res = await fetch('/cart', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
                     credentials: 'same-origin',
                     body: JSON.stringify({
                         productId,
                         variantId: v._id,
-                        quantity
+                        quantity: 1
                     })
                 });
 
-                const result = await response.json();
+                const result = await res.json().catch(() => ({}));
 
-                if (!response.ok) {
-                    showAddToCartMessage(result.message || 'Could not add to cart', true);
+                if (!res.ok) {
+                    // Surfaces the real reason (e.g. the 5-per-item cart cap)
+                    // instead of a generic "Try again" that hides why it failed.
+                    cartErrorEl.textContent = result.message || 'Could not add to cart';
+                    cartErrorEl.classList.remove('hidden');
+                    addToCartBtn.textContent = originalText;
+                    addToCartBtn.disabled = false;
                     return;
                 }
 
-                showAddToCartMessage('Added to your bag ✓', false);
+                addToCartBtn.textContent = 'Added ✓';
+                setTimeout(() => {
+                    addToCartBtn.textContent = originalText;
+                    addToCartBtn.disabled = false;
+                }, 1500);
             } catch (err) {
-                showAddToCartMessage('Network error — please try again', true);
-            } finally {
-                isAddingToCart = false;
-                addToCartBtn.disabled = false;
+                cartErrorEl.textContent = 'Network error — please try again';
+                cartErrorEl.classList.remove('hidden');
                 addToCartBtn.textContent = originalText;
+                addToCartBtn.disabled = false;
             }
         });
 
@@ -459,54 +399,6 @@
             container.addEventListener('mouseleave', () => {
                 img.style.transform = 'scale(1)';
                 container.classList.remove('zoomed');
-            });
-        })();
-
-        // --- Wishlist toggle ---
-        (function() {
-            const btn = document.getElementById('wishlistBtn');
-            const icon = document.getElementById('wishlistIcon');
-            if (!btn || !icon) return;
-
-            btn.addEventListener('click', async () => {
-                const isWishlisted = btn.dataset.wishlisted === 'true';
-                btn.disabled = true;
-
-                try {
-                    let res;
-                    if (isWishlisted) {
-                        res = await fetch(`/wishlist/${productId}`, { method: 'DELETE' });
-                    } else {
-                        res = await fetch('/wishlist', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ productId })
-                        });
-                    }
-
-                    if (!res.ok) {
-                        if (res.status === 401) {
-                            window.location.href = '/login';
-                            return;
-                        }
-                        throw new Error('Wishlist request failed');
-                    }
-
-                    const data = await res.json();
-                    const nowWishlisted = data.inWishlist;
-
-                    btn.dataset.wishlisted = String(nowWishlisted);
-                    btn.setAttribute('aria-label', nowWishlisted ? 'Remove from wishlist' : 'Add to wishlist');
-                    icon.setAttribute('fill', nowWishlisted ? '#FF0000' : 'none');
-                    icon.setAttribute('stroke', nowWishlisted ? '#FF0000' : '#57534e');
-
-                    btn.classList.add('pulse');
-                    setTimeout(() => btn.classList.remove('pulse'), 350);
-                } catch (err) {
-                    console.error(err);
-                } finally {
-                    btn.disabled = false;
-                }
             });
         })();
     </script>

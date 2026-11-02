@@ -9,10 +9,7 @@ export const findCategory = async ( { filter, skip, limit, sort } ) => {
 };
 
 export const addCategory = async (data) => {
-    const category = await Category.create(data);
-    const { imageUrl } = data;
-    console.log(imageUrl)
-    return category;
+    return await Category.create(data);
 };
 
 export const editCategory = async (categoryId, data) => {
@@ -27,6 +24,10 @@ export const findCategoryById = async (categoryId) => {
     return await Category.findById(categoryId);
 };
 
+export const findCategoriesByIds = async (ids) => {
+    return await Category.find({ _id: { $in: ids } }).select('name status offer isDeleted').lean();
+};
+
 export const countCategory = async (filter)=> {
     return await Category.countDocuments(filter);
 }
@@ -34,4 +35,3 @@ export const countCategory = async (filter)=> {
 export const findCategoryByOne = async(filter) => {
     return await Category.findOne(filter);
 }
-

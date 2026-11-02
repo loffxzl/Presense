@@ -2,7 +2,10 @@ import Cart from '../models/Cart.js';
 
 
 export const findCartByUser = async (userId) => {
-    return await Cart.findOne({ userId }).populate('items.productId');
+    return await Cart.findOne({ userId }).populate({
+        path: 'items.productId',
+        populate: { path: 'categoryId', select: 'name status offer isDeleted' }
+    });
 };
 
 

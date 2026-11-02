@@ -7,14 +7,11 @@ export const getProductDetail = catchAsync( async(req, res)=> {
 
     const result = await productDetailService.findProductDetail({slug,sizeby:size, userId: res.locals.user._id});
     if(!result) return res.redirect('/products');
-
-    const {product,similarProduct, isWishlisted} = result;
-    //console.log(similarProduct,"similar product");
+    const {product, similarProduct, isWishlisted, category, offer, variantPricing, similarPricing} = result;
 
     res.render('user/product-detail',{
-        product,
-        similarProduct,
-        isWishlisted,
+
+        product, similarProduct, isWishlisted, category, offer, variantPricing, similarPricing,
         title: product.name
     })
 })

@@ -1,3 +1,4 @@
+// utils/pricing.js
 // ONE place that decides what a customer pays for a variant.
 // Rule: the customer gets the HIGHER of the product offer and the category
 // offer. They are never stacked. The offer is taken off variant.salePrice
@@ -28,8 +29,10 @@ const bestActive = (offers, now) => {
 // product: has .offer (array)   category: has .offer (object or array)
 export const getBestOffer = (product, category = null, now = new Date()) => {
     const cat = category || (product && product.categoryId && typeof product.categoryId === 'object' && product.categoryId.name !== undefined ? product.categoryId : null);
+    // an offer on a hidden/deleted category must not apply
+    const catUsable = cat && cat.status !== 'inactive' && !cat.isDeleted ? cat : null;
     const p = bestActive(product && product.offer, now);
-    const c = bestActive(cat && cat.offer, now);
+    const c = bestActive(catUsable && catUsable.offer, now);
 
     if (!p && !c) return { percent: 0, source: null, label: '' };
     // Tie goes to the product offer (it is the more specific one).
@@ -69,7 +72,13 @@ export const offerPercentExpr = (now = new Date()) => {
             $map: {
                 input: {
                     $filter: {
-                        input: { $cond: [{ $isArray: field }, field, []] },
+                        // product.offer is an array, category.offer is a single object
+                        input: {
+                            $cond: [
+                                { $isArray: field }, field,
+                                { $cond: [{ $eq: [{ $type: field }, 'object'] }, [field], []] }
+                            ]
+                        },
                         as: 'o',
                         cond: {
                             $and: [
@@ -88,3 +97,30 @@ export const offerPercentExpr = (now = new Date()) => {
         $max: [0, { $ifNull: [activeMax('$offer'), 0] }, { $ifNull: [activeMax('$category.offer'), 0] }]
     };
 };
+
+// One product -> the price facts a card needs (cheapest variant after the
+// best offer). category: the product's category doc (may be null).
+export const summarizeProductPrice = (product, category = null, now = new Date()) => {
+    const rows = (product.varients || []).map((v) => ({ v, p: priceVariant(v, product, category, now) }));
+    if (!rows.length) return { price: null, mrp: null, offerPercent: 0, offerSource: null, hasMultipleSizes: false, inStock: false };
+    const cheapest = rows.reduce((a, b) => (b.p.price < a.p.price ? b : a));
+    return {
+        price: cheapest.p.price,
+        mrp: cheapest.p.mrp,
+        salePrice: cheapest.p.salePrice,
+        offerPercent: cheapest.p.offerPercent,
+        offerSource: cheapest.p.offerSource,
+        hasMultipleSizes: rows.length > 1,
+        inStock: rows.some(({ v }) => v.stock > 0)
+    };
+};
+
+// Mongo expression: the effective price of every variant (needs offerPercent
+// already added to the document).
+export const variantPricesExpr = () => ({
+    $map: {
+        input: { $ifNull: ['$varients', []] },
+        as: 'v',
+        in: { $subtract: ['$$v.salePrice', { $divide: [{ $multiply: ['$$v.salePrice', '$offerPercent'] }, 100] }] }
+    }
+});

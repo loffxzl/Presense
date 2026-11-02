@@ -1,7 +1,11 @@
 import * as cartRepository from '../../repositories/cartRepository.js';
 import * as productRepository from '../../repositories/productRepository.js';
 import * as brandRepository from '../../repositories/brandRepository.js';
+import * as categorieRepository from '../../repositories/categorieRepository.js';
+import { priceVariant } from '../../utils/pricing.js';
 import AppError from '../../utils/AppError.js';
+
+const round2 = (n) => Math.round(n * 100) / 100;
 
 const getOrCreateCart = async (userId) => {
     let cart = await cartRepository.findRawCartByUser(userId);
@@ -31,7 +35,11 @@ export const getCartDetails = async (userId) => {
             .map(async (item) => {
                 const product = item.productId;
                 const variant = product.varients.id(item.variantId);
-                const price = variant ? variant.salePrice : item.priceAtAdd;
+                // The customer pays the best of product offer / category offer
+                // (category is populated by cartRepository.findCartByUser).
+                const category = product.categoryId && product.categoryId.name !== undefined ? product.categoryId : null;
+                const pricing = variant ? priceVariant(variant, product, category) : null;
+                const price = pricing ? pricing.price : item.priceAtAdd;
 
                 return {
                     productId: product._id,
@@ -42,15 +50,17 @@ export const getCartDetails = async (userId) => {
                     image: (product.image && product.image[0]) || null,
                     size: variant ? variant.size : '—',
                     price,
+                    listPrice: pricing ? pricing.salePrice : item.priceAtAdd,   // before the offer
+                    offerPercent: pricing ? pricing.offerPercent : 0,
                     quantity: item.quantity,
                     stock: variant ? variant.stock : 0,
                     unavailable: !variant,
-                    lineTotal: price * item.quantity
+                    lineTotal: round2(price * item.quantity)
                 };
             })
     );
 
-    const subtotal = items.reduce((sum, i) => sum + i.lineTotal, 0);
+    const subtotal = round2(items.reduce((sum, i) => sum + i.lineTotal, 0));
 
     return { items, subtotal };
 };
@@ -64,6 +74,9 @@ export const addItem = async (userId, productId, variantId, quantity = 1) => {
     const variant = product.varients.id(variantId);
     if (!variant) throw new AppError('Selected size is unavailable', 404);
 
+    const category = await categorieRepository.findCategoryById(product.categoryId);
+    const currentPrice = priceVariant(variant, product, category).price;
+
     const cart = await getOrCreateCart(userId);
     const existingItem = findItem(cart, productId, variantId);
     const desiredQuantity = existingItem ? existingItem.quantity + quantity : quantity;
@@ -72,9 +85,9 @@ export const addItem = async (userId, productId, variantId, quantity = 1) => {
 
     if (existingItem) {
         existingItem.quantity = desiredQuantity;
-        existingItem.priceAtAdd = variant.salePrice;
+        existingItem.priceAtAdd = currentPrice;
     } else {
-        cart.items.push({ productId, variantId, quantity, priceAtAdd: variant.salePrice });
+        cart.items.push({ productId, variantId, quantity, priceAtAdd: currentPrice });
     }
 
     await cartRepository.saveCart(cart);
