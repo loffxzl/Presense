@@ -3,7 +3,7 @@ import * as cartService from './user/cartService.js';
 import * as addressService from './user/addressService.js';
 import * as orderRepository from '../repositories/orderRepository.js';
 import * as inventoryRepository from '../repositories/inventoryRepository.js';
-import * as couponRepository from '../repositories/couponRepository.js';
+import * as couponRepository from '../repositories/CouponRepository.js';
 import * as paymentRepository from '../repositories/paymentRepository.js';
 import * as walletService from './user/walletService.js';
 import AppError from '../utils/AppError.js';
@@ -12,10 +12,13 @@ const TAX_RATE = 0.05;
 const FREE_SHIPPING_THRESHOLD = 999;
 const FLAT_SHIPPING_FEE = 49;
 
+const round2 = (n) => Math.round(n * 100) / 100;
+
 const computePricing = (subtotal, discount = 0) => {
     const tax = Math.round(subtotal * TAX_RATE);
     const shippingFee = subtotal === 0 || subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : FLAT_SHIPPING_FEE;
-    const total = Math.max(subtotal + tax - discount + shippingFee, 0);
+    // offers can make prices decimal, so keep totals at exactly 2 decimals
+    const total = round2(Math.max(subtotal + tax - discount + shippingFee, 0));
     return { subtotal, tax, discount, shippingFee, total };
 };
 

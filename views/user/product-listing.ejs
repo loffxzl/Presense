@@ -391,12 +391,10 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-x-5 gap-y-10">
 
                         <% products.forEach((product) => {
-                            const variants = product.varients || [];
-                            const prices = variants.map(v => v.salePrice).filter(p => typeof p === 'number');
-                            const lowestPrice = prices.length ? Math.min(...prices) : null;
-                            const hasActiveOffer = (product.offer || []).some(
-                                o => o.isActive && new Date(o.expiryDate) > new Date()
-                            );
+                            // price the customer really pays (best of product / category offer)
+                            const pricing = product.pricing || {};
+                            const lowestPrice = typeof pricing.price === 'number' ? pricing.price : null;
+                            const hasActiveOffer = (pricing.offerPercent || 0) > 0;
                             const vialFill = product.concentration === 'Extrait de Parfum' ? 100
                                             : product.concentration === 'Eau de Parfum' ? 62
                                             : product.concentration === 'Eau de Toilette' ? 30
@@ -420,7 +418,7 @@
 
                                     <% if (hasActiveOffer) { %>
                                         <span class="absolute top-4 right-14 z-10 inline-flex items-center px-3 py-1.5 rounded-full bg-scentAmber text-scentCharcoal text-[9px] uppercase tracking-[0.15em] font-bold shadow-sm">
-                                            Special Offer
+                                            <%= pricing.offerPercent %>% off
                                         </span>
                                     <% } %>
 
@@ -499,6 +497,9 @@
                                                 <span class="text-base font-semibold text-stone-900">
                                                     ₹<%= lowestPrice.toLocaleString('en-IN') %>
                                                 </span>
+                                                <% if (hasActiveOffer && pricing.salePrice > lowestPrice) { %>
+                                                    <span class="ml-1.5 text-xs text-stone-400 line-through">₹<%= pricing.salePrice.toLocaleString('en-IN') %></span>
+                                                <% } %>
                                             <% } else { %>
                                                 <span class="text-xs text-stone-400">Unavailable</span>
                                             <% } %>

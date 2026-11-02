@@ -97,7 +97,12 @@
 
                             <div class="flex items-center justify-between mt-auto pt-3 border-t border-stone-100">
                                 <% if (item.price !== null) { %>
-                                    <span class="text-sm font-semibold text-stone-900">$<%= Number(item.price).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span>
+                                    <span class="text-sm font-semibold text-stone-900">
+                                        ₹<%= Number(item.price).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+                                        <% if (item.offerPercent > 0 && item.mrp > item.price) { %>
+                                            <span class="ml-1 text-xs font-normal text-stone-400 line-through">₹<%= Number(item.mrp).toLocaleString('en-IN') %></span>
+                                        <% } %>
+                                    </span>
                                 <% } else { %>
                                     <span class="text-xs text-stone-400">Unavailable</span>
                                 <% } %>

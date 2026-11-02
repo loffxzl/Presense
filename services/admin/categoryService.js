@@ -11,12 +11,39 @@ const categorySchema = z.object({
   status: z.enum(['active', 'inactive']).optional()
 });
 
+const MAX_OFFER_PERCENT = 90;
+
+
+const parseOffer = (data) => {
+  const rawPercent = String(data.offerPercent ?? '').trim();
+  if (!rawPercent) return null;
+
+  const percent = Number(rawPercent);
+  if (!Number.isFinite(percent) || percent < 1 || percent > MAX_OFFER_PERCENT) {
+    throw new AppError(`Offer must be between 1% and ${MAX_OFFER_PERCENT}%`, 400);
+  }
+
+  const rawExpiry = String(data.offerExpiry ?? '').trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(rawExpiry)) throw new AppError('Please choose an offer expiry date', 400);
+
+  // the offer runs until the end of that day, Indian time
+  const expiryDate = new Date(`${rawExpiry}T23:59:59+05:30`);
+  if (Number.isNaN(expiryDate.getTime())) throw new AppError('Offer expiry date is invalid', 400);
+
+  const isActive = data.offerActive === 'on' || data.offerActive === 'true' || data.offerActive === true;
+  if (isActive && expiryDate <= new Date()) throw new AppError('Offer expiry must be in the future', 400);
+
+  const label = String(data.offerLabel ?? '').trim().slice(0, 40) || `${percent}% off`;
+
+  return { label, discountPercent: percent, expiryDate, isActive };
+};
+
 
 export const getCategoryList = async ({ page = 1, limit = 10, search = '' } = {}) => {
     const filter = { isDeleted: { $ne: true } };
 
   if (search.trim()) {
-    filter.name = { $regex: new RegExp(search.trim(), 'i') };
+    filter.name = { $regex: new RegExp(escapeRegex(search.trim()), 'i') };
   }
 
   const currentPage = Math.max(1,parseInt(page));
@@ -42,9 +69,7 @@ export const addCategoryService = async (data, imageUrl = null) => {
     if(!parsed.success) throw new AppError(parsed.error.issues[0].message, 400);
 
     const { name, description, status } = parsed.data;
-
-    console.log(name)
-    console.log(typeof(name));
+    const offer = parseOffer(data);
 
     const DuplicateCategory = await categorieRepository.findCategoryByOne({ 
       name: {$regex:`^${escapeRegex(name.trim())}$`, $options: 'i'},
@@ -54,7 +79,7 @@ export const addCategoryService = async (data, imageUrl = null) => {
 
     const slug = generateSlug(name);
 
-    return  categorieRepository.addCategory({ name, description, status: status || 'active', slug, imageUrl});
+    return  categorieRepository.addCategory({ name, description, status: status || 'active', slug, imageUrl, ...(offer ? { offer } : {}) });
 };
 
 export const editCategory = async (categoryId, data, imageUrl = null) => {
@@ -67,12 +92,15 @@ export const editCategory = async (categoryId, data, imageUrl = null) => {
     if(!ExistCatagory) throw new AppError('Category not found', 404);
 
     const { name , description, status } = parsed.data;
+    const offer = parseOffer(data);   // null clears the offer
 
     const generateSlug = (name) => slugify(name, { lower: true, strict: true, trim: true });
 
     const slug = generateSlug(name) || ExistCatagory.slug;
 
-      const DuplicateCategory = await categorieRepository.findCategoryByOne({ 
+
+    const DuplicateCategory = await categorieRepository.findCategoryByOne({ 
+      _id: { $ne: categoryId },
       name: {$regex:`^${escapeRegex(name.trim())}$`, $options: 'i'},
       isDeleted: {$ne: true}});
 
@@ -84,6 +112,7 @@ export const editCategory = async (categoryId, data, imageUrl = null) => {
         , description : description || ExistCatagory.description
         , status: status || 'active'
         , imageUrl : imageUrl || ExistCatagory.imageUrl
+        , offer
     });
 };
 

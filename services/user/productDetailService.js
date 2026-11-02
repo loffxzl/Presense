@@ -1,7 +1,10 @@
 import * as productRepository from '../../repositories/productRepository.js';
 import { NotFoundError, OutOfStockError } from '../../utils/errors.js'
 import * as wishlistRepository from '../../repositories/wishlistRepository.js';
+import * as categorieRepository from '../../repositories/categorieRepository.js';
 import { findBrandById } from '../../repositories/brandRepository.js';
+import { getBestOffer, priceVariant, summarizeProductPrice } from '../../utils/pricing.js';
+import {findCategoryById} from '../../repositories/categorieRepository.js';
 
 export const findProductDetail = async ({slug, sizeby, limit = 4, userId}) => {
     const filter = {
@@ -19,7 +22,6 @@ export const findProductDetail = async ({slug, sizeby, limit = 4, userId}) => {
     isDeleted: { $ne: true },
     status: { $ne: 'unlisted' }
     };
-    similarFilter.brandId = product.brandId;
     const similarProduct = await productRepository.findAllProduct(similarFilter,limit);
 
     if (sizeby) {
@@ -35,15 +37,24 @@ export const findProductDetail = async ({slug, sizeby, limit = 4, userId}) => {
     
     product.brand = brand.name;
 
-    return {product, similarProduct, isWishlisted };
+    // ---- Pricing: the customer gets the higher of product / category offer ----
+    const categoryIds = [...new Set([product.categoryId, ...similarProduct.map((p) => p.categoryId)].map(String))];
+    const categories = await categorieRepository.findCategoriesByIds(categoryIds);
+    const categoryById = new Map(categories.map((c) => [String(c._id), c]));
+    const category = categoryById.get(String(product.categoryId)) || null;
+
+    const now = new Date();
+    const offer = getBestOffer(product, category, now);
+    const variantPricing = product.varients.map((v) => ({
+        variantId: String(v._id),
+        ...priceVariant(v, product, category, now)
+    }));
+
+    const similarPricing = {};
+    similarProduct.forEach((p) => {
+        similarPricing[String(p._id)] = summarizeProductPrice(p, categoryById.get(String(p.categoryId)) || null, now);
+    });
+
+
+    return { product, similarProduct, isWishlisted, category, offer, variantPricing, similarPricing };
 }
-
-
-
-
-// c. Product details page
-// i. Zoomable images
-// ii. Breadcrumbs, ratings, price, discounts/coupons, reviews, stock info
-// iii. Error handling for sold out/unavailable/out of stock done
-// iv. Product highlights and related product recommendations done
-// v. Redirect to listing if product blocked/unavailable (on refresh or actions) done
