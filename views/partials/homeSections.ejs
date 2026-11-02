@@ -1,0 +1,294 @@
+<%# views/partials/homeSections.ejs
+    Shared body for the home (signed in) and landing (visitor) pages.
+    Expects: mode ('home' | 'landing'), categories, arrivals, bestSellers, banners %>
+<%
+  const FALLBACK_DECK = [
+    { name: 'Bleu Luxury',     image: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=800&auto=format&fit=crop' },
+    { name: 'Amber Oud',       image: 'https://images.unsplash.com/photo-1541643600914-78b084683601?q=80&w=800&auto=format&fit=crop' },
+    { name: 'Intense Scent',   image: 'https://images.unsplash.com/photo-1523293182086-7651a899d37f?q=80&w=800&auto=format&fit=crop' },
+    { name: 'Royal Incense',   image: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?q=80&w=800&auto=format&fit=crop' },
+    { name: 'Parisian Rose',   image: 'https://images.unsplash.com/photo-1547887537-6158d64c35b3?q=80&w=800&auto=format&fit=crop' }
+  ];
+  // Hero deck: real product photos first, pad with the default imagery.
+  const deck = arrivals.filter(p => p.image).slice(0, 5).map(p => ({ name: p.name, image: p.image, href: '/products/' + p.slug }));
+  while (deck.length < 5) deck.push(FALLBACK_DECK[deck.length]);
+
+  const stackStates = [
+    'translate(0px, 0px) scale(1) rotate(0deg)',
+    'translate(16px, -16px) scale(0.96) rotate(2deg)',
+    'translate(32px, -32px) scale(0.92) rotate(4deg)',
+    'translate(-16px, 16px) scale(0.88) rotate(-2deg)',
+    'translate(-32px, 32px) scale(0.84) rotate(-4deg)'
+  ];
+  const stackOpacity = [1, 0.9, 0.75, 0.55, 0.35];
+  const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '';
+%>
+
+<!-- Ambient falling petals -->
+<canvas id="scent-petals" class="fixed inset-0 pointer-events-none z-30"></canvas>
+
+<!-- HERO -->
+<header class="relative bg-stone-950 bg-cover bg-center py-20 lg:py-32 px-6 overflow-hidden min-h-[650px] flex items-center"
+        style="background-image: url('https://images.unsplash.com/photo-1610461888750-10bbf3ba653f?q=80&w=2000&auto=format&fit=crop');">
+    <div class="absolute inset-0 bg-black/75 z-0"></div>
+    <div class="absolute -top-24 -left-20 w-96 h-96 bg-amber-600 rounded-full mix-blend-color-dodge filter blur-3xl opacity-20 animate-fadeIn"></div>
+    <div class="absolute -bottom-24 -right-20 w-96 h-96 bg-stone-500 rounded-full mix-blend-color-dodge filter blur-3xl opacity-30 animate-fadeIn"></div>
+
+    <div class="max-w-7xl mx-auto grid md:grid-cols-2 gap-16 items-center relative z-10 w-full text-left">
+        <div class="space-y-6 max-w-xl">
+            <span class="animate-init animate-fadeIn text-xs uppercase tracking-widest text-scentAmber font-semibold bg-scentCharcoal/80 px-3 py-1.5 rounded-full inline-block">
+                Exquisite Olfactory Art
+            </span>
+            <h1 class="animate-init animate-fadeInUp text-4xl lg:text-6xl font-serif text-white leading-tight tracking-wide">Find Your Signature Scent</h1>
+            <p class="animate-init animate-fadeInUpDelayed text-stone-300 text-base lg:text-lg font-light leading-relaxed">
+                Discover curated designer masterpieces and rare, rich Middle Eastern oud profiles selected explicitly for the modern connoisseur.
+            </p>
+            <div class="animate-init animate-fadeInUpDelayed pt-2 flex flex-wrap gap-4" style="animation-delay: 0.4s;">
+                <a href="#categories" class="inline-block bg-white text-scentCharcoal font-semibold px-8 py-3.5 rounded-sm shadow-md hover:bg-scentAmber hover:-translate-y-0.5 transform transition-all duration-300 uppercase text-xs tracking-widest">Explore Collections</a>
+                <% if (mode === 'landing') { %>
+                    <a href="/auth/signup" class="inline-block border border-white/60 text-white font-semibold px-8 py-3.5 rounded-sm hover:border-scentAmber hover:text-scentAmber transition-all duration-300 uppercase text-xs tracking-widest">Create Account</a>
+                <% } else { %>
+                    <a href="/products" class="inline-block border border-white/60 text-white font-semibold px-8 py-3.5 rounded-sm hover:border-scentAmber hover:text-scentAmber transition-all duration-300 uppercase text-xs tracking-widest">Shop All</a>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- 5-card deck -->
+        <div class="flex justify-center md:justify-end animate-init animate-fadeInUp pr-8 lg:pr-16" style="animation-delay: 0.5s;">
+            <div id="interactive-deck" class="relative w-[230px] h-[310px] lg:w-[270px] lg:h-[360px] cursor-pointer select-none">
+                <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(212,175,55,0.25)_0%,transparent_70%)] rounded-full filter blur-xl scale-125 pointer-events-none z-0"></div>
+                <% deck.forEach((c, i) => { %>
+                    <div class="shuffle-card absolute inset-0 w-full h-full rounded-xl overflow-hidden shadow-2xl border border-white/10 bg-stone-900"
+                         style="transform: <%= stackStates[i] %>; z-index: <%= 50 - i * 10 %>; opacity: <%= stackOpacity[i] %>;">
+                        <img src="<%= c.image %>" alt="<%= c.name %>" class="w-full h-full object-cover pointer-events-none">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent pointer-events-none"></div>
+                        <span class="absolute bottom-4 left-4 right-4 truncate text-[10px] font-mono tracking-widest text-stone-300 uppercase">0<%= i + 1 %> / <%= c.name %></span>
+                    </div>
+                <% }) %>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- COLLECTIONS (real categories) -->
+<% if (categories.length) { %>
+<main id="categories" class="max-w-7xl mx-auto px-6 py-20">
+    <h2 class="text-3xl font-serif text-center mb-12">Browse by Collection</h2>
+    <div class="grid sm:grid-cols-2 <%= categories.length >= 3 ? 'lg:grid-cols-3' : '' %> gap-8">
+        <% categories.forEach(c => { %>
+            <a href="/products?categoryId=<%= c.id %>"
+               class="relative group overflow-hidden rounded-lg bg-stone-950 h-80 flex items-center justify-center text-center px-6 shadow-md hover:shadow-xl transition-shadow duration-500">
+                <% if (c.image) { %>
+                    <img src="<%= c.image %>" alt="" loading="lazy" class="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:scale-105 transition-transform duration-700">
+                <% } %>
+                <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/30 z-10 transition-all duration-700 group-hover:bg-black/40"></div>
+                <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(112,83,53,0.3)_0%,transparent_70%)]"></div>
+                <% if (c.offerPercent > 0) { %>
+                    <span class="absolute top-4 right-4 z-20 bg-scentAmber text-scentCharcoal text-[10px] uppercase font-bold px-2.5 py-1 tracking-wider rounded"><%= c.offerPercent %>% off</span>
+                <% } %>
+                <div class="relative z-20 transform transition-transform duration-500 group-hover:-translate-y-2">
+                    <h3 class="text-3xl font-serif text-white mb-3 tracking-wide"><%= c.name %></h3>
+                    <% if (c.description) { %><p class="text-stone-300 text-sm max-w-xs mx-auto mb-5 opacity-80 line-clamp-2"><%= c.description %></p><% } %>
+                    <span class="inline-block border-b border-white text-white uppercase text-xs tracking-widest pb-1 group-hover:text-scentAmber group-hover:border-scentAmber transition-colors duration-300">
+                        <%= c.productCount %> fragrance<%= c.productCount === 1 ? '' : 's' %> &rarr;
+                    </span>
+                </div>
+            </a>
+        <% }) %>
+    </div>
+</main>
+<% } else { %><div id="categories"></div><% } %>
+
+<!-- OFFER BANNERS (only when the admin has live offers) -->
+<% if (banners.length) { %>
+<section class="w-full h-[450px] relative overflow-hidden bg-stone-950 my-8 group">
+    <% banners.forEach((b, i) => { %>
+        <div class="promo-slide absolute inset-0 w-full h-full flex items-center transition-opacity duration-1000 ease-in-out <%= i === 0 ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none' %>">
+            <% if (b.image) { %><img src="<%= b.image %>" alt="" loading="lazy" class="absolute inset-0 w-full h-full object-cover opacity-35 mix-blend-luminosity pointer-events-none"><% } %>
+            <div class="absolute inset-0 bg-gradient-to-r from-black/85 via-black/50 to-transparent z-10"></div>
+            <div class="max-w-7xl mx-auto px-6 text-white w-full relative z-20">
+                <div class="max-w-xl">
+                    <span class="text-xs uppercase tracking-widest text-scentAmber font-semibold block mb-3"><%= b.eyebrow %></span>
+                    <h2 class="text-3xl md:text-5xl font-serif mb-4 leading-tight tracking-wide"><%= b.title %></h2>
+                    <p class="text-stone-300 text-sm md:text-base mb-8 font-light leading-relaxed"><%= b.text %></p>
+                    <div class="flex items-center gap-4 flex-wrap">
+                        <a href="<%= b.href %>" class="bg-scentAmber text-scentCharcoal font-semibold px-6 py-3 rounded-sm text-xs uppercase tracking-widest hover:bg-white transition-all duration-300"><%= b.cta %></a>
+                        <% if (b.expiry) { %><span class="text-xs text-stone-400 uppercase tracking-wider">Ends <%= fmtDate(b.expiry) %></span><% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <% }) %>
+    <% if (banners.length > 1) { %>
+        <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex space-x-3">
+            <% banners.forEach((b, i) => { %>
+                <button type="button" aria-label="Show offer <%= i + 1 %>" class="slide-dot w-2 h-2 rounded-full bg-white transition-all duration-300 <%= i === 0 ? 'opacity-100' : 'opacity-40' %>" data-slide="<%= i %>"></button>
+            <% }) %>
+        </div>
+    <% } %>
+</section>
+<% } %>
+
+<!-- NEW ARRIVALS -->
+<section class="bg-white py-20 px-6 border-t border-stone-100">
+    <div class="max-w-7xl mx-auto">
+        <div class="flex justify-between items-end mb-12">
+            <div>
+                <h2 class="text-3xl font-serif">Curated Arrivals</h2>
+                <p class="text-stone-500 text-sm mt-1">The newest fragrances in our house</p>
+            </div>
+            <a href="/products" class="text-sm font-medium text-scentEarth hover:text-scentAmber transition-colors duration-300 group">
+                View All Products <span class="inline-block transform group-hover:translate-x-1 transition-transform duration-300">&rarr;</span>
+            </a>
+        </div>
+        <% if (arrivals.length) { %>
+            <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                <% arrivals.forEach(p => { %><%- include('productCard', { p }) %><% }) %>
+            </div>
+        <% } else { %>
+            <p class="text-center text-stone-400 py-10">New fragrances are on their way. Check back soon.</p>
+        <% } %>
+    </div>
+</section>
+
+<!-- BEST SELLERS (only once there are real sales) -->
+<% if (bestSellers.length) { %>
+<section class="bg-scentCream py-20 px-6 border-t border-stone-100">
+    <div class="max-w-7xl mx-auto">
+        <div class="mb-12">
+            <h2 class="text-3xl font-serif">Most Loved</h2>
+            <p class="text-stone-500 text-sm mt-1">What our customers keep coming back for</p>
+        </div>
+        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            <% bestSellers.forEach(p => { %><%- include('productCard', { p }) %><% }) %>
+        </div>
+    </div>
+</section>
+<% } %>
+
+<!-- POETIC INTERLUDE -->
+<section class="w-full py-28 relative overflow-hidden bg-stone-950 flex flex-col items-center justify-center border-t border-stone-900">
+    <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(212,175,55,0.08)_0%,transparent_60%)] pointer-events-none"></div>
+    <div class="max-w-4xl mx-auto px-6 text-center relative z-10 w-full flex flex-col items-center">
+        <div id="poem-container" class="relative w-full h-[120px] md:h-[160px]">
+            <% [
+                ['A whisper on the collarbone,', 'A memory in the air...'],
+                ['Before a single word is spoken,', 'The essence lingers there.'],
+                ['More than glass and golden oils,', 'An invisible embrace.'],
+                ['The art of leaving who you are,', 'Within an empty space.']
+            ].forEach((s, i) => { %>
+                <div class="poem-stanza absolute inset-0 flex items-center justify-center transition-opacity duration-[3000ms] ease-in-out <%= i === 0 ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none' %>">
+                    <p class="text-xl md:text-3xl font-serif italic text-stone-300 tracking-wide leading-loose">"<%= s[0] %><br><%= s[1] %>"</p>
+                </div>
+            <% }) %>
+        </div>
+        <div class="w-16 h-[1px] bg-scentAmber/40 mt-6"></div>
+
+        <% if (mode === 'landing') { %>
+            <a href="/auth/signup" class="mt-10 inline-block bg-scentAmber text-scentCharcoal font-semibold px-8 py-3.5 rounded-sm hover:bg-white transition-colors duration-300 uppercase text-xs tracking-widest">Join Presense</a>
+        <% } %>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="bg-scentCharcoal text-stone-400 py-12 px-6 text-center text-sm">
+    <p>&copy; <%= new Date().getFullYear() %> Presense. All rights reserved.</p>
+</footer>
+
+<script>
+(function () {
+    /* ---- Falling petals ---- */
+    const canvas = document.getElementById('scent-petals');
+    const ctx = canvas.getContext('2d');
+    let width = (canvas.width = window.innerWidth), height = (canvas.height = window.innerHeight);
+    window.addEventListener('resize', () => { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; });
+    class Petal {
+        constructor() { this.reset(); this.y = Math.random() * height; }
+        reset() {
+            this.x = Math.random() * width; this.y = -20; this.size = Math.random() * 5 + 4;
+            this.speedY = Math.random() * 0.8 + 0.4; this.speedX = Math.random() * 1.2 - 0.4;
+            this.opacity = Math.random() * 0.4 + 0.15; this.flip = Math.random(); this.flipSpeed = Math.random() * 0.02 + 0.01;
+            this.color = Math.random() > 0.5 ? '212, 175, 55' : '112, 83, 53';
+        }
+        update(s) { this.y += this.speedY + s * 0.2; this.x += this.speedX + s * 0.9; this.flip += this.flipSpeed; if (this.y > height || this.x > width || this.x < -20) this.reset(); }
+        draw() {
+            ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.flip); ctx.scale(Math.sin(this.flip), 1); ctx.beginPath();
+            ctx.fillStyle = 'rgba(' + this.color + ', ' + this.opacity + ')';
+            for (let i = 0; i < 4; i++) { ctx.rotate(Math.PI / 2); ctx.moveTo(0, 0); ctx.quadraticCurveTo(this.size, this.size / 2, this.size, 0); ctx.quadraticCurveTo(this.size, -this.size / 2, 0, 0); }
+            ctx.fill(); ctx.restore();
+        }
+    }
+    const petals = Array.from({ length: 20 }, () => new Petal());
+    let lastY = window.scrollY, vel = 0;
+    window.addEventListener('scroll', () => { vel = Math.abs(window.scrollY - lastY); lastY = window.scrollY; });
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    (function loop() {
+        ctx.clearRect(0, 0, width, height); vel *= 0.94; if (vel < 0.05) vel = 0;
+        if (!reduce) petals.forEach(p => { p.update(vel); p.draw(); });
+        requestAnimationFrame(loop);
+    })();
+
+    /* ---- Offer banner carousel ---- */
+    const slides = document.querySelectorAll('.promo-slide');
+    const dots = document.querySelectorAll('.slide-dot');
+    let slideIdx = 0, slideTimer;
+    function showSlide(i) {
+        slideIdx = i;
+        slides.forEach((s, n) => {
+            const on = n === i;
+            s.classList.toggle('opacity-100', on); s.classList.toggle('z-10', on);
+            s.classList.toggle('opacity-0', !on); s.classList.toggle('z-0', !on); s.classList.toggle('pointer-events-none', !on);
+            if (dots[n]) { dots[n].classList.toggle('opacity-100', on); dots[n].classList.toggle('opacity-40', !on); }
+        });
+        clearInterval(slideTimer); startSlides();
+    }
+    function startSlides() { if (slides.length > 1) slideTimer = setInterval(() => showSlide((slideIdx + 1) % slides.length), 6000); }
+    dots.forEach(d => d.addEventListener('click', () => showSlide(Number(d.dataset.slide))));
+    startSlides();
+
+    /* ---- 5-card shuffle ---- */
+    const cards = document.querySelectorAll('.shuffle-card');
+    const deckEl = document.getElementById('interactive-deck');
+    const order = [0, 1, 2, 3, 4];
+    const states = [
+        { t: 'translate(0px, 0px) scale(1) rotate(0deg)', z: '50', o: '1' },
+        { t: 'translate(16px, -16px) scale(0.96) rotate(2deg)', z: '40', o: '0.9' },
+        { t: 'translate(32px, -32px) scale(0.92) rotate(4deg)', z: '30', o: '0.75' },
+        { t: 'translate(-16px, 16px) scale(0.88) rotate(-2deg)', z: '20', o: '0.55' },
+        { t: 'translate(-32px, 32px) scale(0.84) rotate(-4deg)', z: '10', o: '0.35' }
+    ];
+    let shuffling = false, deckTimer;
+    function shuffle() {
+        if (shuffling || cards.length < 5) return;
+        shuffling = true;
+        const front = order[0];
+        cards[front].style.transform = 'translate(-135%, 45px) scale(0.92) rotate(-16deg)';
+        cards[front].style.opacity = '0';
+        for (let i = 1; i < 5; i++) {
+            const s = states[i - 1], c = cards[order[i]];
+            c.style.transform = s.t; c.style.zIndex = s.z; c.style.opacity = s.o;
+        }
+        setTimeout(() => {
+            const b = states[4];
+            cards[front].style.zIndex = b.z; cards[front].style.transform = b.t; cards[front].style.opacity = b.o;
+            order.push(order.shift()); shuffling = false;
+        }, 450);
+    }
+    function startDeck() { deckTimer = setInterval(shuffle, 4000); }
+    if (deckEl) deckEl.addEventListener('click', () => { clearInterval(deckTimer); shuffle(); startDeck(); });
+    startDeck();
+
+    /* ---- Poem ---- */
+    const stanzas = document.querySelectorAll('.poem-stanza');
+    let sIdx = 0;
+    if (stanzas.length > 1) setInterval(() => {
+        const next = (sIdx + 1) % stanzas.length;
+        stanzas[sIdx].classList.remove('opacity-100', 'z-10'); stanzas[sIdx].classList.add('opacity-0', 'z-0', 'pointer-events-none');
+        stanzas[next].classList.remove('opacity-0', 'z-0', 'pointer-events-none'); stanzas[next].classList.add('opacity-100', 'z-10');
+        sIdx = next;
+    }, 8500);
+
+    /* After logout, don't show a cached signed-in page on Back */
+    window.addEventListener('pageshow', (e) => { if (e.persisted) window.location.reload(); });
+})();
+</script>

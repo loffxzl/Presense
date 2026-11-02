@@ -1,5 +1,7 @@
 import * as orderRepository from '../../repositories/orderRepository.js';
 import * as inventoryRepository from '../../repositories/inventoryRepository.js';
+import * as refundService from '../refundService.js';
+import * as referralService from '../referralService.js';
 import AppError from '../../utils/AppError.js';
 
 
@@ -75,12 +77,10 @@ export const getOrderDetails = async (orderId) => {
     };
 };
 
-// Restocks every still-active item on the order and flips each to 'returned'.
-// Mirrors the restockItem pattern from the user-side cancel flow, but applied
-// order-wide since this app's return request is whole-order, not per-item.
+
 const restockOrderItems = async (order, note) => {
     for (const item of order.items) {
-        if (item.status !== 'active') continue; // skip items already cancelled individually
+        if (item.status !== 'active') continue; 
 
         const updated = await inventoryRepository.adjustVariantStock(item.productId, item.variantId, item.quantity);
         if (updated) {
@@ -115,6 +115,8 @@ export const updateOrderStatus = async (orderId, nextStatus, { reason = '', admi
         throw new AppError('A reason is required to reject a return', 400);
     }
 
+    let autoNote = '';
+
     switch (nextStatus) {
         case 'delivered':
             order.deliveredAt = new Date();
@@ -132,11 +134,20 @@ export const updateOrderStatus = async (orderId, nextStatus, { reason = '', admi
         case 'return_in_transit':
             order.returnInTransitAt = new Date();
             break;
-        case 'return_received':
+        case 'return_received': {
             order.returnReceivedAt = new Date();
+
+            const refunded = await refundService.refundOnReturn(order);
+            if (refunded > 0) autoNote = `₹${refunded} refunded to customer's wallet`;
             await restockOrderItems(order, `Order ${order.orderCode} returned and restocked`);
             break;
+        }
         case 'refunded':
+
+            {
+                const refunded = await refundService.refundOnReturn(order);
+                if (refunded > 0) autoNote = `₹${refunded} refunded to customer's wallet`;
+            }
             order.refundedAt = new Date();
             break;
         default:
@@ -147,9 +158,19 @@ export const updateOrderStatus = async (orderId, nextStatus, { reason = '', admi
     order.statusHistory.push({
         status: nextStatus,
         changedBy: adminId || undefined,
-        note: reason ? reason.trim() : undefined
+        note: reason ? reason.trim() : (autoNote || undefined)
     });
 
     await order.save();
+
+
+    if (nextStatus === 'delivered') {
+        try {
+            await referralService.rewardOnDelivery(order);
+        } catch (err) {
+            console.error('Referral reward failed:', err.message);
+        }
+    }
+
     return order;
 };

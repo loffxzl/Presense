@@ -44,8 +44,8 @@
     </header>
 
     <%
-        const currency = (n) => '$' + Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        const hasBlockingIssue = items.some((i) => i.unavailable || i.quantity > i.stock);
+    const currency = (n) => '₹' + Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const hasBlockingIssue = items.some((i) => i.unavailable || i.quantity > i.stock);
     %>
 
     <div class="max-w-4xl mx-auto px-6 py-14">

@@ -108,6 +108,13 @@
     .place-order-btn:disabled{ opacity:0.5; cursor:not-allowed; }
     .payment-note{ font-size:11px; color:var(--ink-soft); margin-top:10px; text-align:center; }
 
+    .pay-option{
+        display:flex; align-items:center; gap:10px; padding:12px 14px; margin-bottom:8px;
+        border:1px solid var(--line); border-radius:8px; cursor:pointer; font-size:13px;
+    }
+    .pay-option.selected{ border-color:var(--ink); box-shadow:inset 0 0 0 1px var(--ink); }
+    .pay-option small{ display:block; color:var(--ink-soft); font-size:11px; margin-top:2px; }
+
     /* --- Modal --- */
     .modal-overlay{ position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:100; display:none; align-items:center; justify-content:center; padding:16px; }
     .modal-overlay.show{ display:flex; }
@@ -221,10 +228,26 @@
             <div class="pricing-row total"><span>Total</span><span class="value" id="priceTotal">₹<%= pricing.total %></span></div>
         </div>
 
+        <h2 style="margin-top:24px;">Payment method</h2>
+        <div id="paymentMethods">
+            <label class="pay-option selected">
+                <input type="radio" name="paymentMethod" value="cod" checked>
+                <span>Cash on Delivery</span>
+            </label>
+            <label class="pay-option" id="walletOption">
+                <input type="radio" name="paymentMethod" value="wallet" disabled>
+                <span>Presense Wallet <small id="walletBalanceText">Checking balance…</small></span>
+            </label>
+            <label class="pay-option">
+                <input type="radio" name="paymentMethod" value="razorpay">
+                <span>Pay online <small>UPI, cards, netbanking (Razorpay)</small></span>
+            </label>
+        </div>
+
         <button type="button" class="place-order-btn" id="placeOrderBtn" <%= items.length === 0 ? 'disabled' : '' %>>
             Place order — Cash on Delivery
         </button>
-        <p class="payment-note">You'll pay in cash when your order arrives.</p>
+        <p class="payment-note" id="paymentNote">You'll pay in cash when your order arrives.</p>
     </section>
 </main>
 
@@ -285,7 +308,13 @@
     </div>
 </div>
 
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script>
+    // One key per checkout attempt. If the same request is sent twice (double
+    // click, retry), the server returns the order it already created.
+    let checkoutKey = crypto.randomUUID();
+    let currentTotal = <%= pricing.total %>;
+    let walletBalance = 0;
     const addressList = document.getElementById('addressList');
     const addressModal = document.getElementById('addressModal');
     const addressForm = document.getElementById('addressForm');
@@ -384,6 +413,8 @@
     const couponMessage = document.getElementById('couponMessage');
 
     function setPricing(pricing) {
+        currentTotal = pricing.total;
+        refreshWalletOption();
         document.getElementById('priceSubtotal').textContent = `₹${pricing.subtotal}`;
         document.getElementById('priceTax').textContent = `₹${pricing.tax}`;
         document.getElementById('priceShipping').textContent = pricing.shippingFee === 0 ? 'Free' : `₹${pricing.shippingFee}`;
@@ -452,34 +483,159 @@
         chip.addEventListener('click', () => applyCoupon(chip.dataset.code));
     });
 
+    // --- Payment method picker ---
+    const placeOrderBtn = document.getElementById('placeOrderBtn');
+    const paymentNote = document.getElementById('paymentNote');
+
+    const PAY_LABELS = {
+        cod: { btn: 'Place order — Cash on Delivery', note: "You'll pay in cash when your order arrives." },
+        wallet: { btn: 'Place order — pay with wallet', note: 'The order total is deducted from your wallet balance.' },
+        razorpay: { btn: 'Place order & pay online', note: 'A secure Razorpay window opens next. Demo mode: no real money is charged.' }
+    };
+
+    function selectedPaymentMethod() {
+        return document.querySelector('input[name="paymentMethod"]:checked').value;
+    }
+
+    function refreshPaymentUi() {
+        const method = selectedPaymentMethod();
+        document.querySelectorAll('.pay-option').forEach((o) => {
+            o.classList.toggle('selected', o.querySelector('input').checked);
+        });
+        placeOrderBtn.textContent = PAY_LABELS[method].btn;
+        paymentNote.textContent = PAY_LABELS[method].note;
+    }
+
+    // Wallet is offered only when the balance covers the whole order total.
+    function refreshWalletOption() {
+        const input = document.querySelector('input[name="paymentMethod"][value="wallet"]');
+        const text = document.getElementById('walletBalanceText');
+        if (!input || !text) return;
+
+        const enough = walletBalance >= currentTotal;
+        input.disabled = !enough;
+        text.textContent = enough
+            ? `Balance ₹${walletBalance}`
+            : `Balance ₹${walletBalance} — not enough for this order`;
+
+        if (!enough && input.checked) {
+            document.querySelector('input[name="paymentMethod"][value="cod"]').checked = true;
+            refreshPaymentUi();
+        }
+    }
+
+    fetch('/wallet/balance', { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
+        .then((r) => r.json())
+        .then((d) => { walletBalance = Number(d.balance) || 0; refreshWalletOption(); })
+        .catch(() => { document.getElementById('walletBalanceText').textContent = 'Unavailable'; });
+
+    document.querySelectorAll('input[name="paymentMethod"]').forEach((r) => {
+        r.addEventListener('change', refreshPaymentUi);
+    });
+
+    // --- Online payment (Razorpay) ---
+    // The server saves only a PENDING order here. Your bag and stock stay
+    // untouched until the payment is verified, so closing the window or a
+    // failed payment leaves everything exactly as it was.
+    async function payOnline(addressId) {
+        const res = await fetch('/payment/checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify({ addressId, couponCode: appliedCouponCode, idempotencyKey: checkoutKey })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Could not start payment');
+
+        let finished = false;
+
+        const rzp = new Razorpay({
+            key: data.keyId,
+            amount: data.amount,
+            currency: data.currency,
+            name: 'Presense',
+            description: `Order ${data.orderCode}`,
+            order_id: data.razorpayOrderId,
+            theme: { color: '#18160F' },
+            handler: async (response) => {
+                finished = true;
+                placeOrderBtn.textContent = 'Verifying payment…';
+                try {
+                    const vRes = await fetch(`/payment/orders/${data.orderId}/verify`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+                        credentials: 'same-origin',
+                        body: JSON.stringify({
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature: response.razorpay_signature
+                        })
+                    });
+                    const vData = await vRes.json();
+                    if (!vRes.ok) throw new Error(vData.message || 'Payment verification failed');
+                    window.location.href = `/orders/${data.orderId}/success`;
+                } catch (err) {
+                    alert(err.message);
+                    window.location.href = '/orders';
+                }
+            },
+            modal: {
+                // Closed without paying: drop the pending order and let them carry on.
+                ondismiss: async () => {
+                    if (finished) return;
+                    try {
+                        await fetch(`/payment/orders/${data.orderId}/abandon`, {
+                            method: 'POST',
+                            headers: { Accept: 'application/json' },
+                            credentials: 'same-origin'
+                        });
+                    } catch (_) { /* nothing to undo on the client */ }
+                    checkoutKey = crypto.randomUUID(); // that order is gone, so the next attempt is a fresh one
+                    placeOrderBtn.disabled = false;
+                    refreshPaymentUi();
+                    paymentNote.textContent = 'Payment cancelled — your bag is unchanged.';
+                }
+            }
+        });
+
+        rzp.on('payment.failed', (resp) => {
+            paymentNote.textContent = resp.error && resp.error.description
+                ? `Payment failed: ${resp.error.description}. You can retry in the window.`
+                : 'Payment failed. You can retry in the window.';
+        });
+
+        rzp.open();
+    }
+
     // --- Place order ---
-    document.getElementById('placeOrderBtn').addEventListener('click', async () => {
+    placeOrderBtn.addEventListener('click', async () => {
         const selected = document.querySelector('input[name="selectedAddress"]:checked');
         if (!selected) return alert('Please select or add a delivery address first.');
 
-        const btn = document.getElementById('placeOrderBtn');
-        btn.disabled = true;
-        btn.textContent = 'Placing order…';
+        const method = selectedPaymentMethod();
+        placeOrderBtn.disabled = true;
+        placeOrderBtn.textContent = method === 'razorpay' ? 'Opening payment…' : 'Placing order…';
 
         try {
-            const res = await fetch('/checkout/place-order', {
+            if (method === 'razorpay') {
+                await payOnline(selected.value);
+                return; 
+            }
+
+            const placeUrl = method === 'wallet' ? '/wallet/checkout' : '/checkout/place-order';
+            const res = await fetch(placeUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
                 credentials: 'same-origin',
-                body: JSON.stringify({ addressId: selected.value, couponCode: appliedCouponCode })
+                body: JSON.stringify({ addressId: selected.value, couponCode: appliedCouponCode, idempotencyKey: checkoutKey })
             });
             const result = await res.json();
-            if (!res.ok) {
-                alert(result.message || 'Could not place order');
-                btn.disabled = false;
-                btn.textContent = 'Place order — Cash on Delivery';
-                return;
-            }
+            if (!res.ok) throw new Error(result.message || 'Could not place order');
             window.location.href = `/orders/${result.orderId}/success`;
         } catch (err) {
-            alert('Network error — please try again');
-            btn.disabled = false;
-            btn.textContent = 'Place order — Cash on Delivery';
+            alert(err.message || 'Network error — please try again');
+            placeOrderBtn.disabled = false;
+            refreshPaymentUi();
         }
     });
 </script>

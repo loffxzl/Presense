@@ -24,7 +24,11 @@ const userSchema = new mongoose.Schema({
   emailVerificationToken: { type: String },
   emailVerificationExpiry: { type: Date },
   refreshToken: { type: String },
-  addresses: [addressSchema]
+  addresses: [addressSchema],
+
+
+  referralCode: { type: String, unique: true, sparse: true, uppercase: true, trim: true },
+  referredBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 }, { timestamps: true });
 
 export { addressSchema };

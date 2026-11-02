@@ -1,6 +1,7 @@
 import * as productRepository from '../../repositories/productRepository.js';
 import { NotFoundError, OutOfStockError } from '../../utils/errors.js'
 import * as wishlistRepository from '../../repositories/wishlistRepository.js';
+import { findBrandById } from '../../repositories/brandRepository.js';
 
 export const findProductDetail = async ({slug, sizeby, limit = 4, userId}) => {
     const filter = {
@@ -13,12 +14,12 @@ export const findProductDetail = async ({slug, sizeby, limit = 4, userId}) => {
     if(!product) return false;
 
     const similarFilter = {
-    brand: product.brand,
+    brandId: product.brandId,
     _id: { $ne: product._id },
     isDeleted: { $ne: true },
     status: { $ne: 'unlisted' }
     };
-    similarFilter.brand = product.brand;
+    similarFilter.brandId = product.brandId;
     const similarProduct = await productRepository.findAllProduct(similarFilter,limit);
 
     if (sizeby) {
@@ -29,6 +30,10 @@ export const findProductDetail = async ({slug, sizeby, limit = 4, userId}) => {
 
     const wishlistProductIds = await wishlistRepository.findWishlistProductIds(userId);
     const isWishlisted = wishlistProductIds.includes(String(product._id));
+
+    const brand = await findBrandById(product.brandId);
+    
+    product.brand = brand.name;
 
     return {product, similarProduct, isWishlisted };
 }

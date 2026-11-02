@@ -1,5 +1,6 @@
 import * as cartRepository from '../../repositories/cartRepository.js';
 import * as productRepository from '../../repositories/productRepository.js';
+import * as brandRepository from '../../repositories/brandRepository.js';
 import AppError from '../../utils/AppError.js';
 
 const getOrCreateCart = async (userId) => {
@@ -13,33 +14,41 @@ const findItem = (cart, productId, variantId) =>
         (i) => i.productId.toString() === String(productId) && i.variantId.toString() === String(variantId)
     );
 
+const resolveBrandName = async (brandRef) => {
+    if (!brandRef) return 'Unknown';
+    if (brandRef.name) return brandRef.name;
+    const brand = await brandRepository.findBrandById(brandRef);
+    return brand ? brand.name : 'Unknown';
+};
 
 export const getCartDetails = async (userId) => {
     const cart = await cartRepository.findCartByUser(userId);
     if (!cart || cart.items.length === 0) return { items: [], subtotal: 0 };
 
-    const items = cart.items
-        .filter((item) => item.productId && !item.productId.isDeleted) 
-        .map((item) => {
-            const product = item.productId;
-            const variant = product.varients.id(item.variantId);
-            const price = variant ? variant.salePrice : item.priceAtAdd;
+    const items = await Promise.all(
+        cart.items
+            .filter((item) => item.productId && !item.productId.isDeleted)
+            .map(async (item) => {
+                const product = item.productId;
+                const variant = product.varients.id(item.variantId);
+                const price = variant ? variant.salePrice : item.priceAtAdd;
 
-            return {
-                productId: product._id,
-                variantId: item.variantId,
-                slug: product.slug,
-                name: product.name,
-                brand: product.brand,
-                image: (product.image && product.image[0]) || null,
-                size: variant ? variant.size : '—',
-                price,
-                quantity: item.quantity,
-                stock: variant ? variant.stock : 0,
-                unavailable: !variant, 
-                lineTotal: price * item.quantity
-            };
-        });
+                return {
+                    productId: product._id,
+                    variantId: item.variantId,
+                    slug: product.slug,
+                    name: product.name,
+                    brand: await resolveBrandName(product.brandId),
+                    image: (product.image && product.image[0]) || null,
+                    size: variant ? variant.size : '—',
+                    price,
+                    quantity: item.quantity,
+                    stock: variant ? variant.stock : 0,
+                    unavailable: !variant,
+                    lineTotal: price * item.quantity
+                };
+            })
+    );
 
     const subtotal = items.reduce((sum, i) => sum + i.lineTotal, 0);
 

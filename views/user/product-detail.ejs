@@ -248,7 +248,7 @@
                             <span class="text-xs text-stone-400 uppercase tracking-wider"><%= rp.brand %></span>
                             <h3 class="text-sm font-medium text-stone-800 group-hover:text-scentAmber transition-colors duration-300 truncate"><%= rp.name %></h3>
                             <% if (rpLowest !== null) { %>
-                                <span class="text-sm font-semibold mt-1">$<%= rpLowest.toLocaleString('en-IN') %></span>
+                                <span class="text-sm font-semibold mt-1">₹<%= rpLowest.toLocaleString('en-IN') %></span>
                             <% } %>
                         </a>
                     <% }) %>
@@ -282,7 +282,7 @@
         const qtyPlusBtn = document.getElementById('qtyPlus');
 
         function formatPrice(n) {
-            return '$' + Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            return '₹' + Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
 
         function renderVariant() {
@@ -304,7 +304,7 @@
                 discountBadgeEl.classList.remove('hidden');
 
                 const savedRupees = (v.basePrice - finalPrice).toFixed(2);
-                savedAmountEl.textContent = `You save $${Number(savedRupees).toLocaleString('en-IN')}`;
+                savedAmountEl.textContent = `You save ₹${Number(savedRupees).toLocaleString('en-IN')}`;
                 savedAmountEl.classList.remove('hidden');
             } else {
                 originalPriceEl.classList.add('hidden');

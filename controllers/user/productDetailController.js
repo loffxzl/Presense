@@ -9,6 +9,7 @@ export const getProductDetail = catchAsync( async(req, res)=> {
     if(!result) return res.redirect('/products');
 
     const {product,similarProduct, isWishlisted} = result;
+    //console.log(similarProduct,"similar product");
 
     res.render('user/product-detail',{
         product,

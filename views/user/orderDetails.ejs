@@ -91,10 +91,13 @@
 
         <!-- ACTIONS -->
         <div class="flex flex-wrap gap-3 mb-10">
-            <a href="/orders/<%= order._id %>/invoice"
-               class="px-5 py-2.5 rounded-lg border border-stone-200 bg-white text-[10px] uppercase tracking-[0.15em] font-semibold text-stone-600 hover:border-scentAmber hover:text-scentAmber transition">
-                Download invoice
-            </a>
+            <% const invoiceStatuses = ['shipped', 'delivered', 'return_requested', 'return_approved', 'return_rejected', 'return_pickup', 'return_in_transit', 'return_received', 'refunded']; %>
+            <% if (invoiceStatuses.includes(order.status)) { %>
+                <a href="/orders/<%= order._id %>/invoice"
+                   class="px-5 py-2.5 rounded-lg border border-stone-200 bg-white text-[10px] uppercase tracking-[0.15em] font-semibold text-stone-600 hover:border-scentAmber hover:text-scentAmber transition">
+                    Download invoice
+                </a>
+            <% } %>
             <% if (['pending', 'confirmed'].includes(order.status)) { %>
                 <button type="button" id="cancelOrderBtn"
                         class="px-5 py-2.5 rounded-lg border border-red-300 bg-white text-[10px] uppercase tracking-[0.15em] font-semibold text-red-600 hover:bg-red-50 transition">
@@ -193,7 +196,39 @@
             <!-- PAYMENT -->
             <section class="bg-white border border-stone-200 rounded-xl p-6 sm:p-7">
                 <p class="text-[10px] uppercase tracking-[0.2em] text-stone-400 font-semibold mb-4">Payment</p>
-                <p class="text-sm text-stone-600">Cash on Delivery</p>
+                <%
+                    const methodLabels = { COD: 'Cash on Delivery', RAZORPAY: 'Paid online (Razorpay)', WALLET: 'Presense Wallet' };
+                    const methodLabel = methodLabels[order.paymentMethod] || 'Cash on Delivery';
+                    const isPaid = order.paymentStatus === 'paid';
+                    // COD is paid on delivery, so "pending" there is normal rather than a warning.
+                    const statusText = isPaid
+                        ? 'Paid'
+                        : order.paymentStatus === 'failed'
+                            ? 'Payment failed'
+                            : order.paymentMethod === 'COD' || !order.paymentMethod
+                                ? 'Pay on delivery'
+                                : 'Payment pending';
+                    const statusColor = isPaid
+                        ? 'border-emerald-600 text-emerald-700 bg-emerald-50'
+                        : order.paymentStatus === 'failed'
+                            ? 'border-red-400 text-red-600 bg-red-50'
+                            : 'border-stone-300 text-stone-600 bg-stone-50';
+                %>
+                <p class="text-sm text-stone-900 font-medium"><%= methodLabel %></p>
+                <span class="inline-flex items-center mt-2 px-3 py-1 rounded-full border text-[10px] uppercase tracking-[0.12em] font-semibold <%= statusColor %>">
+                    <%= statusText %>
+                </span>
+                <% if (isPaid && order.paidAt) { %>
+                    <p class="text-xs text-stone-400 mt-2">
+                        on <%= new Date(order.paidAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) %>
+                    </p>
+                <% } %>
+                <% if (order.refundedAmount > 0) { %>
+                    <div class="mt-4 pt-4 border-t border-stone-100">
+                        <p class="text-sm text-emerald-700 font-medium">₹<%= order.refundedAmount.toLocaleString('en-IN') %> refunded to your wallet</p>
+                        <a href="/wallet" class="text-[10px] uppercase tracking-[0.15em] text-stone-500 hover:text-scentAmber border-b border-stone-300 transition">View wallet</a>
+                    </div>
+                <% } %>
             </section>
         </div>
 

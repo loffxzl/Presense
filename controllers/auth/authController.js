@@ -3,6 +3,8 @@ import { generateAccessToken, generateRefreshToken } from '../../utils/jwt.js';
 import * as userRepository from '../../repositories/userRepository.js';
 
 
+const cleanRef = (v) => String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12);
+
 const cookieOptions = (maxAge) => ({
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
@@ -39,7 +41,7 @@ export const postLogin = async (req, res) => {
 };
 
 export const getSignupPage = (req, res) => {
-  res.render('auth/signup', { title: 'Sign Up', error: null });
+  res.render('auth/signup', { title: 'Sign Up', error: null, ref: cleanRef(req.query.ref) });
 };
 
 export const postSignup = async (req, res) => {
@@ -48,7 +50,7 @@ export const postSignup = async (req, res) => {
     req.session.pendingEmail = req.body.email.toLowerCase().trim();
     res.redirect('/auth/verify-otp');
   } catch (err) {
-    res.render('auth/signup', { title: 'Sign Up', error: err.message });
+    res.render('auth/signup', { title: 'Sign Up', error: err.message, ref: cleanRef(req.body.referralCode) });
   }
 };
 

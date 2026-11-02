@@ -10,6 +10,7 @@ import connectDB from './config/db.js';
 import { attachUser } from './middlewares/auth.js';
 import passport, { initPassport } from './config/passport.js';
 import authRoutes from './routes/authRoutes.js';
+
 import adminUserRoutes from './routes/admin/userRoutes.js';
 import adminCategoryRoutes from './routes/admin/categoryRoutes.js';
 import adminProductRoutes from './routes/admin/productRoutes.js';
@@ -17,6 +18,11 @@ import adminCouponRoutes from './routes/admin/couponRoutes.js';
 import adminOrderRoutes from './routes/admin/orderRoutes.js';
 import adminBrandRoutes from './routes/admin/brandRoutes.js'
 import adminInventoryRoutes from './routes/admin/inventoryRoutes.js';
+import adminWalletRoutes from './routes/admin/walletRoutes.js';
+import dashboardRoutes from './routes/admin/dashboardRoutes.js';
+import adminSalesReportRoutes from './routes/admin/salesReportRoutes.js';
+import adminReferralRoutes from './routes/admin/referralRoutes.js';
+
 import userRoutes from './routes/userRoutes.js';
 import userProductListRoutes from './routes/user/productListingRouter.js'
 import userProductDetailRoutes from './routes/user/productDetailRouter.js'
@@ -25,6 +31,10 @@ import wishlistRoutes from './routes/user/wishlistRouter.js';
 import checkoutRoutes from './routes/user/checkoutRouter.js';
 import checkoutAddressRoutes from './routes/user/Checkoutaddressroutes.js'
 import orderRoutes from './routes/user/orderRouter.js';
+import userPaymentRoutes from './routes/user/paymentRoutes.js';
+import userWalletRoutes from './routes/user/walletRoutes.js';
+import userReferralRoutes from './routes/user/referralRoutes.js';
+
 import { adminLogout } from './controllers/auth/authController.js';
 import compression from 'compression';
 import morgan from 'morgan';
@@ -60,7 +70,14 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(methodOverride('_method'));
 app.use(cookieParser());
-app.use(helmet({ contentSecurityPolicy: false }));
+//app.use(helmet({ contentSecurityPolicy: false }));
+
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
+  crossOriginEmbedderPolicy: false,
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
+}));
 
 app.use(session({
   secret: process.env.SESSION_SECRET,
@@ -83,6 +100,7 @@ app.use(attachCartCount);
 
 
 app.use('/auth', authRoutes);
+
 app.use('/admin/users', adminUserRoutes);
 app.use('/admin/category', adminCategoryRoutes);
 app.use('/admin/products', adminProductRoutes);
@@ -90,6 +108,11 @@ app.use('/admin/coupon', adminCouponRoutes);
  app.use('/admin/orders', adminOrderRoutes);
 app.use('/admin/brands', adminBrandRoutes);
 app.use('/admin/inventory', adminInventoryRoutes);
+app.use('/admin/wallets', adminWalletRoutes);
+app.use('/admin/dashboard',dashboardRoutes);
+app.use('/admin/sales', adminSalesReportRoutes);
+app.use('/admin/referrals', adminReferralRoutes);
+
 app.use('/', userRoutes);
 app.use('/products',userProductListRoutes);
 app.use('/products',userProductDetailRoutes);
@@ -98,6 +121,9 @@ app.use('/wishlist', wishlistRoutes);
 app.use('/checkout', checkoutRoutes);
 app.use('/addresses', checkoutAddressRoutes);
 app.use('/orders', orderRoutes);
+app.use('/payment',userPaymentRoutes);
+app.use('/wallet', userWalletRoutes);
+app.use('/referrals', userReferralRoutes);
 
 
 app.get('/admin/logout', adminLogout);

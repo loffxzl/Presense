@@ -204,7 +204,7 @@
                         <label class="block text-xs font-semibold text-gray-600 uppercase mb-2">Images</label>
                         <input type="file" name="images" id="f-images" accept="image/jpeg,image/png,image/webp" multiple
                                class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gray-900 file:text-white hover:file:bg-gray-700">
-                        <p class="text-gray-400 text-xs mt-1">JPG, PNG or WebP. Min 3, max 5 images, 5MB each. Each image will open a crop step after selection.</p>
+                        <p class="text-gray-400 text-xs mt-1">JPG, PNG or WebP. Min 3, max 5 images, 5MB each. Each image opens a crop step after selection — you can open the picker multiple times to add more.</p>
                         <p class="text-red-500 text-xs mt-1 hidden" id="e-images"></p>
                         <div id="imagePreviewRow" class="flex gap-2 mt-2 flex-wrap"></div>
                     </div>
@@ -275,10 +275,7 @@
         const MAX_IMAGES = 5;
         const MAX_DESCRIPTION_LENGTH = 1000;
 
-        // Tracks how many images the product already has saved (edit mode).
-        // Needed because the file input starts empty in edit mode even though
-        // the product may already have images — without this, min-image
-        // validation would wrongly fail on an untouched edit.
+
         let existingImageCount = 0;
 
         const showFieldError = (id, msg) => {
@@ -322,6 +319,16 @@
             variantRows.innerHTML = '';
             document.getElementById('imagePreviewRow').innerHTML = '';
             ['e-name','e-brand','e-description','e-categoryId','e-concentration','e-images','e-varients'].forEach(clearFieldError);
+
+            // Reset the image-picking state too — otherwise images left over
+            // from a previous open of this modal (e.g. editing product A,
+            // cancelling, then opening product B) would carry over, since
+            // picks now accumulate across multiple file-dialog openings
+            // instead of being wiped on each one.
+            croppedFiles = [];
+            cropQueue = [];
+            cropIndex = 0;
+            imagesInput.value = '';
 
             if (mode === 'add') {
                 title.textContent = 'Add Product';
@@ -475,12 +482,46 @@
         const cropProgress = document.getElementById('cropProgress');
 
         imagesInput.addEventListener('change', function() {
-            if (!validateImages()) { this.value = ''; return; }
-            const files = Array.from(this.files);
-            if (files.length === 0) return;
+            const newFiles = Array.from(this.files);
+            if (newFiles.length === 0) return;
 
-            cropQueue = files;
-            croppedFiles = [];
+            // Each pick ADDS to what's already queued/cropped, rather than
+            // replacing it — so this checks the count against the slots
+            // still remaining (MAX_IMAGES minus what's already saved on the
+            // product plus what's already been cropped and confirmed in
+            // this session), not against MAX_IMAGES on its own.
+            const remainingSlots = MAX_IMAGES - (existingImageCount + croppedFiles.length);
+
+            if (remainingSlots <= 0) {
+                showFieldError('e-images', `You can upload up to ${MAX_IMAGES} images in total`);
+                this.value = '';
+                return;
+            }
+            if (newFiles.length > remainingSlots) {
+                showFieldError('e-images', `You can add ${remainingSlots} more image${remainingSlots === 1 ? '' : 's'} (${MAX_IMAGES} max in total)`);
+                this.value = '';
+                return;
+            }
+            for (const file of newFiles) {
+                if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+                    showFieldError('e-images', 'Only JPG, PNG and WebP images are allowed');
+                    this.value = '';
+                    return;
+                }
+                if (file.size > MAX_IMAGE_SIZE) {
+                    showFieldError('e-images', 'Each image must be smaller than 5MB');
+                    this.value = '';
+                    return;
+                }
+            }
+            clearFieldError('e-images');
+
+            // Clear the input now — the File objects are already captured in
+            // cropQueue, so this is safe, and it lets the admin pick the same
+            // filename again in a later round if they want to.
+            this.value = '';
+
+            cropQueue = newFiles;
             cropIndex = 0;
             startCropStep();
         });

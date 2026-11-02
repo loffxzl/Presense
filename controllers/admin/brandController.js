@@ -4,7 +4,7 @@ import * as brandService from '../../services/admin/brandService.js';
 export const listBrands = catchAsync(async (req, res) => {
     const { page = 1, search = '' } = req.query;
     const data = await brandService.listBrands({ page, limit: 10, search });
-    res.render('admin/brand', { ...data, title: 'Brand Management' });
+    res.render('admin/brand', { ...data, title: 'Brand Management', adminName: req.session.admin.name });
 });
 
 export const createBrand = catchAsync(async (req, res) => {

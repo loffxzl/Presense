@@ -72,6 +72,12 @@ export const editCategory = async (categoryId, data, imageUrl = null) => {
 
     const slug = generateSlug(name) || ExistCatagory.slug;
 
+      const DuplicateCategory = await categorieRepository.findCategoryByOne({ 
+      name: {$regex:`^${escapeRegex(name.trim())}$`, $options: 'i'},
+      isDeleted: {$ne: true}});
+
+    if(DuplicateCategory) throw new AppError('name already exists', 409);
+
     return  categorieRepository.editCategory(categoryId,{
           name : name || ExistCatagory.name
         , slug : slug
