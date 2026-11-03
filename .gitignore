@@ -2,4 +2,7 @@ node_modules/
 .env
 access.log
 repeatTrackTheFunction
-dump
+dumpnode_modules
+.env
+error.log
+access.log
