@@ -1,5 +1,5 @@
 import Product from '../models/Products.js';
-import StockLog from '../models/StockLog.js';
+import StockLog from '../models/Stocklog.js';
 
 export const adjustVariantStock = async (productId, variantId, delta) => {
     const filter = { _id: productId, 'varients._id': variantId };

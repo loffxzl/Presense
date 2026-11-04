@@ -1,8 +1,8 @@
 import { customAlphabet } from 'nanoid';
 import * as cartService from './user/cartService.js';
 import * as addressService from './user/addressService.js';
-import * as orderRepository from '../repositories/orderRepository.js';
-import * as inventoryRepository from '../repositories/inventoryRepository.js';
+import * as orderRepository from '../repositories/Orderrepository.js';
+import * as inventoryRepository from '../repositories/Inventoryrepository.js';
 import * as couponRepository from '../repositories/CouponRepository.js';
 import * as paymentRepository from '../repositories/paymentRepository.js';
 import * as walletService from './user/walletService.js';

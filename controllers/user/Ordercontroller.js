@@ -1,5 +1,5 @@
 import {catchAsync} from '../../utils/catchAsync.js';
-import * as orderService from '../../services/user/orderService.js';
+import * as orderService from '../../services/user/Orderservice.js';
 import { streamInvoicePdf } from '../../utils/generateInvoicePdf.js';
 
 export const listOrders = catchAsync(async (req, res) => {
