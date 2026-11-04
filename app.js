@@ -31,7 +31,7 @@ import userCartRoutes from './routes/user/cartRouter.js'
 import wishlistRoutes from './routes/user/wishlistRouter.js';
 import checkoutRoutes from './routes/user/checkoutRouter.js';
 import checkoutAddressRoutes from './routes/user/Checkoutaddressroutes.js'
-import orderRoutes from './routes/user/orderRouter.js';
+import orderRoutes from './routes/user/Orderrouter.js';
 import userPaymentRoutes from './routes/user/paymentRoutes.js';
 import userWalletRoutes from './routes/user/walletRoutes.js';
 import userReferralRoutes from './routes/user/referralRoutes.js';
