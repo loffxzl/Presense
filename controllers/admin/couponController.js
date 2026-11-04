@@ -7,7 +7,7 @@ export const getCouponList = catchAsync(async (req,res) => {
 
     const data = await couponServivces.getCoupon({page, limit: 10, search});
 
-    return res.render('admin/Coupon',{
+    return res.render('admin/coupon',{
         ...data,
         search,
         title:'Coupon',
