@@ -1,5 +1,5 @@
-import * as orderRepository from '../../repositories/orderRepository.js';
-import * as inventoryRepository from '../../repositories/inventoryRepository.js';
+import * as orderRepository from '../../repositories/Orderrepository.js';
+import * as inventoryRepository from '../../repositories/Inventoryrepository.js';
 import * as refundService from '../refundService.js';
 import * as referralService from '../referralService.js';
 import AppError from '../../utils/AppError.js';

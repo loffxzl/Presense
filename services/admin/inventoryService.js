@@ -1,4 +1,4 @@
-import * as inventoryRepository from '../../repositories/inventoryRepository.js';
+import * as inventoryRepository from '../../repositories/Inventoryrepository.js';
 import AppError from '../../utils/AppError.js';
 
 const LOW_STOCK_THRESHOLD = 5; 

@@ -1,5 +1,5 @@
 import express from 'express';
-import * as checkoutController from '../../controllers/user/checkoutController.js';
+import * as checkoutController from '../../controllers/user/Checkoutcontroller.js';
 import { isUserAuthenticated } from '../../middlewares/auth.js';
 
 const router = express.Router();

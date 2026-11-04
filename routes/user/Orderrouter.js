@@ -1,5 +1,5 @@
 import express from 'express';
-import * as orderController from '../../controllers/user/orderController.js';
+import * as orderController from '../../controllers/user/Ordercontroller.js';
 import { isUserAuthenticated } from '../../middlewares/auth.js';
 
 const router = express.Router();

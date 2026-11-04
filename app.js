@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -15,7 +16,7 @@ import adminUserRoutes from './routes/admin/userRoutes.js';
 import adminCategoryRoutes from './routes/admin/categoryRoutes.js';
 import adminProductRoutes from './routes/admin/productRoutes.js';
 import adminCouponRoutes from './routes/admin/couponRoutes.js';
-import adminOrderRoutes from './routes/admin/orderRoutes.js';
+import adminOrderRoutes from './routes/admin/orderroutes.js';
 import adminBrandRoutes from './routes/admin/brandRoutes.js'
 import adminInventoryRoutes from './routes/admin/inventoryRoutes.js';
 import adminWalletRoutes from './routes/admin/walletRoutes.js';
@@ -30,7 +31,7 @@ import userCartRoutes from './routes/user/cartRouter.js'
 import wishlistRoutes from './routes/user/wishlistRouter.js';
 import checkoutRoutes from './routes/user/checkoutRouter.js';
 import checkoutAddressRoutes from './routes/user/Checkoutaddressroutes.js'
-import orderRoutes from './routes/user/orderRouter.js';
+import orderRoutes from './routes/user/Orderrouter.js';
 import userPaymentRoutes from './routes/user/paymentRoutes.js';
 import userWalletRoutes from './routes/user/walletRoutes.js';
 import userReferralRoutes from './routes/user/referralRoutes.js';
@@ -52,6 +53,8 @@ connectDB();
 initPassport();
 
 const app = express();
+
+app.set('trust proxy', 1);
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
