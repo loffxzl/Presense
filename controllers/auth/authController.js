@@ -11,15 +11,35 @@ const cookieOptions = (maxAge) => ({
   maxAge
 });
 
+
+const redirectIfLoggedIn = (req, res) => {
+  if (req.session?.admin) {
+    res.redirect('/admin/users');
+    return true;
+  }
+  if (req.cookies?.accessToken) {
+    res.redirect('/home');
+    return true;
+  }
+
+  res.set('Cache-Control', 'no-store');
+  return false;
+};
+
+export const guestOnly = (req, res, next) => {
+  if (redirectIfLoggedIn(req, res)) return;
+  next();
+};
+
 export const getLoginPage = (req, res) => {
-  if (req.session?.admin) return res.redirect('/admin/users');  
-  if (req.cookies.accessToken) return res.redirect('/home');
+  if (redirectIfLoggedIn(req, res)) return;
   const error = req.query.blocked ? 'Your account has been blocked.' : null;
   res.render('auth/login', { title: 'Login', error });
 };
 
 export const postLogin = async (req, res) => {
   try {
+    if (redirectIfLoggedIn(req, res)) return;
     const result = await authService.loginUser(req.body);
 
     if (result.role === 'admin') {
@@ -41,11 +61,13 @@ export const postLogin = async (req, res) => {
 };
 
 export const getSignupPage = (req, res) => {
+  if (redirectIfLoggedIn(req, res)) return;
   res.render('auth/signup', { title: 'Sign Up', error: null, ref: cleanRef(req.query.ref) });
 };
 
 export const postSignup = async (req, res) => {
   try {
+    if (redirectIfLoggedIn(req, res)) return;
     await authService.signupUser(req.body);
     req.session.pendingEmail = req.body.email.toLowerCase().trim();
     res.redirect('/auth/verify-otp');
@@ -111,7 +133,7 @@ export const logout = (req, res) => {
 export const adminLogout = (req, res) => {
   req.session.destroy((err) => {
     if (err) console.error('Admin logout error:', err.message);
-    res.clearCookie('connect.sid'); 
+    res.clearCookie('connect.sid');
     res.redirect('/auth/login');
   });
 };
@@ -133,8 +155,9 @@ export const googleCallback = async (req, res) => {
   }
 };
 
-export const getForgotPasswordPage = (req,res) => {
-  res.render('auth/forgotPassword', {title:'forgot password', error:null , success:null })
+export const getForgotPasswordPage = (req, res) => {
+  if (redirectIfLoggedIn(req, res)) return;
+  res.render('auth/forgotPassword', { title: 'Forgot Password', error: null, success: null });
 };
 
 export const postForgotPassword = async (req, res) => {
@@ -149,15 +172,14 @@ export const postForgotPassword = async (req, res) => {
     res.render('auth/forgotPassword', { title: 'Forgot Password', error: err.message, success: null });
   }
 };
-export const getResetPasswordPage = (req,res) => {
 
-    res.render('auth/resetPassword', {
-      title:'Reset Password',
-      error:null,
-      token:req.params.token
-    });
-  
-}
+export const getResetPasswordPage = (req, res) => {
+  res.render('auth/resetPassword', {
+    title: 'Reset Password',
+    error: null,
+    token: req.params.token
+  });
+};
 
 export const postResetPassword = async (req, res) => {
   try {
