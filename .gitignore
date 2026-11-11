@@ -3,3 +3,5 @@ node_modules/
 access.log
 repeatTrackTheFunction
 dump
+# Local development DNS workaround
+.local-dns-bootstrap.mjs
