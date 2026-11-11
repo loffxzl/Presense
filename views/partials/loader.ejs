@@ -1,0 +1,87 @@
+<%# 
+   Global page loader. Include ONCE per layout, as the first thing inside <body>:
+   <%- include('../partials/loader') %>
+   (adjust the relative path the same way you include your navbar) %>
+<style>
+    .app-loader {
+        position: fixed;
+        inset: 0;
+        z-index: 2147483000;          /* above everything except the Razorpay modal */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.82);
+        -webkit-backdrop-filter: blur(6px);
+        backdrop-filter: blur(6px);
+        opacity: 0;
+        pointer-events: none;          /* inactive: never blocks the page */
+        transition: opacity 0.2s ease;
+        --al-ink: #111111;
+        --al-track: rgba(17, 17, 17, 0.12);
+    }
+    /* Active: clicks are blocked immediately, but the overlay only fades in
+       after 150ms, so fast pages never flash a spinner. */
+    .app-loader.is-active {
+        pointer-events: auto;
+        cursor: progress;
+        animation: al-in 0.25s ease 0.15s forwards;
+    }
+    .app-loader__box {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 18px;
+    }
+    .app-loader__ring {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        border: 2px solid var(--al-track);
+        border-top-color: var(--al-ink);
+        animation: al-spin 0.9s cubic-bezier(0.5, 0.15, 0.5, 0.85) infinite;
+    }
+    .app-loader__brand {
+        font: 600 12px/1 system-ui, -apple-system, 'Segoe UI', sans-serif;
+        letter-spacing: 0.42em;
+        text-indent: 0.42em;           /* balances the trailing letter-spacing */
+        text-transform: uppercase;
+        color: var(--al-ink);
+    }
+    .app-loader__label {
+        margin-top: -8px;
+        font: 400 12px/1.2 system-ui, -apple-system, 'Segoe UI', sans-serif;
+        color: rgba(17, 17, 17, 0.6);
+        min-height: 14px;
+    }
+    @keyframes al-in   { to { opacity: 1; } }
+    @keyframes al-spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) {
+        .app-loader__ring { animation-duration: 2.4s; }
+    }
+
+    /* Optional: small spinner inside a button (used by Loader.button) */
+    .is-busy { position: relative; pointer-events: none; opacity: 0.75; }
+    .is-busy::after {
+        content: '';
+        display: inline-block;
+        width: 14px; height: 14px;
+        margin-left: 10px;
+        vertical-align: -2px;
+        border: 2px solid currentColor;
+        border-right-color: transparent;
+        border-radius: 50%;
+        animation: al-spin 0.7s linear infinite;
+    }
+</style>
+<noscript><style>.app-loader { display: none !important; }</style></noscript>
+
+<%# Starts active, so it also covers the flash of unstyled content while
+    the page and the Tailwind CDN script are still loading. %>
+<div id="app-loader" class="app-loader is-active" role="status" aria-live="polite" aria-label="Loading">
+    <div class="app-loader__box">
+        <div class="app-loader__ring"></div>
+        <div class="app-loader__brand">Presense</div>
+        <div class="app-loader__label" data-loader-label></div>
+    </div>
+</div>
+<script src="/js/loader.js" defer></script>

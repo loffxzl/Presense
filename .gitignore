@@ -2,4 +2,13 @@ node_modules/
 .env
 access.log
 repeatTrackTheFunction
-dump
+dumpnode_modules
+.env
+error.log
+access.log
+node_modules
+.env
+.env.save
+error.log
+access.log
+.DS_Store
