@@ -4,4 +4,4 @@ access.log
 repeatTrackTheFunction
 dump
 # Local development DNS workaround
-.local-dns-bootstrap.mjs
+.local-dns-bootstrap.mjs.DS_Store

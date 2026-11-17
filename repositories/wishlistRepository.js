@@ -26,3 +26,14 @@ export const findWishlistProductIds = async (userId) => {
     const wishlist = await Wishlist.findOne({ userId }).select('items');
     return wishlist ? wishlist.items.map((id) => id.toString()) : [];
 };
+
+
+
+export const countVisibleItems = async (userId) => {
+    const wishlist = await Wishlist.findOne({ userId }).populate({
+        path: 'items',
+        match: { isDeleted: { $ne: true } },
+        select: '_id'
+    });
+    return wishlist ? wishlist.items.filter(Boolean).length : 0;
+};

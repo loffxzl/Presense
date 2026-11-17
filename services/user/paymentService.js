@@ -1,4 +1,3 @@
-// services/user/paymentService.js
 import AppError from '../../utils/AppError.js';
 import { getRazorpayClient, isValidSignature } from '../../utils/razorpayClient.js';
 import * as paymentRepository from '../../repositories/paymentRepository.js';

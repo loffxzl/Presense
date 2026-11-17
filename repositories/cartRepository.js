@@ -22,7 +22,15 @@ export const saveCart = async (cart) => {
 };
 
 export const getCartItemCount = async (userId) => {
-    let cart = await Cart.findOne({userId}).select('items.quantity');
-    if(!cart) return 0;
-    return cart.items.reduce((sum,item) => sum + item.quantity ,0);
+    const cart = await Cart.findOne({ userId })
+        .select('items.productId items.quantity')
+        .populate({ path: 'items.productId', select: 'isDeleted status' });
+    if (!cart) return 0;
+
+    return cart.items.reduce((sum, item) => {
+        const product = item.productId; // null if the product was hard-deleted
+        if (!product || product.isDeleted || product.status !== 'active') return sum;
+        return sum + item.quantity;
+    }, 0);
 };
+

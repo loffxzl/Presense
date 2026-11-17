@@ -23,6 +23,7 @@ import adminWalletRoutes from './routes/admin/walletRoutes.js';
 import dashboardRoutes from './routes/admin/dashboardRoutes.js';
 import adminSalesReportRoutes from './routes/admin/salesReportRoutes.js';
 import adminReferralRoutes from './routes/admin/referralRoutes.js';
+import adminCategoryOfferRoutes from './routes/admin/categoryOfferRoutes.js'
 
 import userRoutes from './routes/userRoutes.js';
 import userProductListRoutes from './routes/user/productListingRouter.js'
@@ -44,13 +45,13 @@ import logger  from './utils/logger.js';
 import fs from 'fs';
 import { errorHandler, notFound } from './middlewares/errorHandler.js';
 import flash from 'connect-flash';
-import {attachCartCount} from './middlewares/attachCartCount.js';
+import { attachCartCount, attachWishlistCount } from './middlewares/attachCartCount.js';
 
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-connectDB();
+//connectDB();
 initPassport();
 
 const app = express();
@@ -88,7 +89,13 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   store: MongoStore.create({ mongoUrl: process.env.MONGO_URI }),
-  cookie: { maxAge: 1000 * 60 * 60 * 24 }
+  //cookie: { maxAge: 1000 * 60 * 60 * 24 }
+  cookie: {
+    maxAge: 1000 * 60 * 60 * 24,
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax'
+    }
 }));
 
 app.use(flash());
@@ -101,6 +108,7 @@ app.use((req, res, next) => {
 app.use(passport.initialize());
 app.use(attachUser);
 app.use(attachCartCount);
+app.use(attachWishlistCount);
 
 
 app.use('/auth', authRoutes);
@@ -116,6 +124,7 @@ app.use('/admin/wallets', adminWalletRoutes);
 app.use('/admin/dashboard',dashboardRoutes);
 app.use('/admin/sales', adminSalesReportRoutes);
 app.use('/admin/referrals', adminReferralRoutes);
+app.use('/admin/category-offers', adminCategoryOfferRoutes);
 
 app.use('/', userRoutes);
 app.use('/products',userProductListRoutes);
@@ -136,4 +145,16 @@ app.use(notFound)
 app.use(errorHandler)
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}/`));
+// app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}/`));
+
+try {
+    await connectDB();
+
+    app.listen(PORT, () => {
+        console.log(`Server running at http://localhost:${PORT}/`);
+    });
+
+} catch (err) {
+    console.error("Application startup failed:", err.message);
+    process.exit(1);
+}

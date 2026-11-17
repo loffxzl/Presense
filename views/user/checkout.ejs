@@ -72,7 +72,22 @@
     .pricing-row.total{ color:var(--ink); font-weight:600; font-size:16px; border-top:1px solid var(--ink); margin-top:8px; padding-top:14px; }
     .pricing-row .value{ font-family:'IBM Plex Mono', monospace; }
 
+    /* --- Coupons --- */
+    .view-coupons-btn{
+        width:100%; display:flex; justify-content:space-between; align-items:center;
+        padding:12px 14px; margin:16px 0 12px; cursor:pointer;
+        border:1px dashed var(--sale); background:transparent; border-radius:8px;
+        font-family:'IBM Plex Mono', monospace; font-size:11px;
+        text-transform:uppercase; letter-spacing:0.06em; color:var(--ink);
+    }
+    .view-coupons-btn:hover{ background:rgba(75,90,61,0.08); }
+    .coupon-count{
+        background:var(--sale); color:var(--card); border-radius:999px;
+        padding:1px 8px; font-size:10px;
+    }
+
     .available-coupons{ display:flex; flex-direction:column; gap:8px; margin-bottom:12px; }
+    #couponModal .available-coupons{ margin-bottom:0; }
     .coupon-chip{
         display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; text-align:left;
         border:1px dashed var(--sale); background:transparent; border-radius:8px;
@@ -130,6 +145,18 @@
     .btn-save{ background:var(--ink); color:var(--card); border:none; }
     .btn-cancel{ background:transparent; border:1px solid var(--line); color:var(--ink-soft); }
     .checkbox-row{ display:flex; align-items:center; gap:8px; font-size:12px; margin-top:6px; }
+
+    /* --- Notice modal (replaces alert()) --- */
+    .notice-box{ text-align:center; max-width:380px; }
+    .notice-icon{
+        width:44px; height:44px; border-radius:50%; margin:0 auto 14px;
+        display:flex; align-items:center; justify-content:center;
+        background:rgba(122,46,34,0.1); color:var(--accent);
+        font-family:'Fraunces', serif; font-size:22px; font-weight:600;
+    }
+    .notice-box h3{ margin-bottom:8px; }
+    .notice-box p{ font-size:13px; color:var(--ink-soft); line-height:1.55; margin:0; }
+    .notice-box .modal-actions{ margin-top:22px; }
 
     @media (max-width:800px){
         main{ grid-template-columns:1fr; padding:24px; }
@@ -197,15 +224,10 @@
         </div>
 
         <% if (availableCoupons && availableCoupons.length > 0) { %>
-            <div class="available-coupons">
-                <% availableCoupons.forEach((c) => { %>
-                    <button type="button" class="coupon-chip" data-code="<%= c.code %>">
-                        <span class="coupon-chip-code"><%= c.code %></span>
-                        <span class="coupon-chip-save">Save ₹<%= c.youSave %></span>
-                        <% if (c.description) { %><span class="coupon-chip-desc"><%= c.description %></span><% } %>
-                    </button>
-                <% }) %>
-            </div>
+            <button type="button" class="view-coupons-btn" id="viewCouponsBtn">
+                <span>View available coupons</span>
+                <span class="coupon-count"><%= availableCoupons.length %></span>
+            </button>
         <% } %>
 
         <div class="coupon-row">
@@ -308,6 +330,40 @@
     </div>
 </div>
 
+<!-- Coupons Modal -->
+<% if (availableCoupons && availableCoupons.length > 0) { %>
+<div id="couponModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="couponModalTitle">
+    <div class="modal-box">
+        <h3 id="couponModalTitle">Available coupons</h3>
+        <div class="available-coupons">
+            <% availableCoupons.forEach((c) => { %>
+                <button type="button" class="coupon-chip" data-code="<%= c.code %>">
+                    <span class="coupon-chip-code"><%= c.code %></span>
+                    <span class="coupon-chip-save">Save ₹<%= c.youSave %></span>
+                    <% if (c.description) { %><span class="coupon-chip-desc"><%= c.description %></span><% } %>
+                </button>
+            <% }) %>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="btn-cancel" id="closeCouponModal">Close</button>
+        </div>
+    </div>
+</div>
+<% } %>
+
+<!-- Notice Modal -->
+<div id="noticeModal" class="modal-overlay" style="z-index:110;" role="alertdialog" aria-modal="true" aria-labelledby="noticeTitle" aria-describedby="noticeMessage">
+    <div class="modal-box notice-box">
+        <div class="notice-icon" aria-hidden="true">!</div>
+        <h3 id="noticeTitle"></h3>
+        <p id="noticeMessage"></p>
+        <div class="modal-actions">
+            <button type="button" class="btn-cancel" id="noticeClose">Close</button>
+            <button type="button" class="btn-save" id="noticeAction" style="display:none;"></button>
+        </div>
+    </div>
+</div>
+
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script>
     // One key per checkout attempt. If the same request is sent twice (double
@@ -320,6 +376,65 @@
     const addressForm = document.getElementById('addressForm');
     const addressModalTitle = document.getElementById('addressModalTitle');
     let editingAddressId = null;
+
+    // --- Notice modal (replaces alert()) ---
+    const noticeModal = document.getElementById('noticeModal');
+    const noticeAction = document.getElementById('noticeAction');
+    let noticeHandler = null;
+
+    function showNotice({ title = 'Something went wrong', message = '', actionLabel = null, onAction = null } = {}) {
+        document.getElementById('noticeTitle').textContent = title;
+        document.getElementById('noticeMessage').textContent = message;
+        noticeHandler = onAction;
+        if (actionLabel) {
+            noticeAction.textContent = actionLabel;
+            noticeAction.style.display = '';
+        } else {
+            noticeAction.style.display = 'none';
+        }
+        noticeModal.classList.add('show');
+        (actionLabel ? noticeAction : document.getElementById('noticeClose')).focus();
+    }
+    function closeNotice() { noticeModal.classList.remove('show'); noticeHandler = null; }
+
+    document.getElementById('noticeClose').addEventListener('click', closeNotice);
+    noticeModal.addEventListener('click', (e) => { if (e.target === noticeModal) closeNotice(); });
+    noticeAction.addEventListener('click', () => {
+        const run = noticeHandler;
+        closeNotice();
+        if (run) run();
+    });
+
+    // --- Coupons modal ---
+    const couponModal = document.getElementById('couponModal');
+    function openCouponModal() { if (couponModal) couponModal.classList.add('show'); }
+    function closeCouponModal() { if (couponModal) couponModal.classList.remove('show'); }
+
+    const viewCouponsBtn = document.getElementById('viewCouponsBtn');
+    if (viewCouponsBtn) viewCouponsBtn.addEventListener('click', openCouponModal);
+    if (couponModal) {
+        document.getElementById('closeCouponModal').addEventListener('click', closeCouponModal);
+        couponModal.addEventListener('click', (e) => { if (e.target === couponModal) closeCouponModal(); });
+    }
+
+    // Escape closes whichever modal is on top
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        if (noticeModal.classList.contains('show')) closeNotice();
+        else if (couponModal && couponModal.classList.contains('show')) closeCouponModal();
+    });
+
+    // --- Address form checks (message shows inside the address modal) ---
+    function validateAddress(a) {
+        if (a.fullName.length < 2) return 'Please enter the full name.';
+        if (!/^\d{10}$/.test(a.phone)) return 'Enter a valid 10-digit mobile number.';
+        if (a.line1.length < 3) return 'Please enter address line 1.';
+        if (!a.city) return 'Please enter the city.';
+        if (!a.state) return 'Please enter the state.';
+        if (!/^\d{6}$/.test(a.pincode)) return 'Enter a valid 6-digit pincode.';
+        if (!a.country) return 'Please enter the country.';
+        return '';
+    }
 
     function openAddressModal(address = null) {
         addressForm.reset();
@@ -364,7 +479,7 @@
                 const res = await fetch(`/addresses/${addressId}/default`, { method: 'PATCH', headers: { Accept: 'application/json' }, credentials: 'same-origin' });
                 if (!res.ok) throw new Error('Could not set default address');
                 window.location.reload();
-            } catch (err) { alert(err.message); }
+            } catch (err) { showNotice({ title: 'Could not set default', message: err.message }); }
             return;
         }
         // otherwise: selecting the card visually (radio input already handles the value)
@@ -385,6 +500,13 @@
             country: document.getElementById('a-country').value.trim(),
             isDefault: document.getElementById('a-isDefault').checked
         };
+
+        const addressError = validateAddress(payload);
+        if (addressError) {
+            document.getElementById('e-form').textContent = addressError;
+            return;
+        }
+        document.getElementById('e-form').textContent = '';
 
         try {
             const url = editingAddressId ? `/addresses/${editingAddressId}` : '/addresses';
@@ -479,8 +601,13 @@
 
     applyCouponBtn.addEventListener('click', () => applyCoupon());
 
+    // Picking a coupon in the modal applies it, then closes the modal so the
+    // result (success or error message, updated totals) is visible.
     document.querySelectorAll('.coupon-chip').forEach((chip) => {
-        chip.addEventListener('click', () => applyCoupon(chip.dataset.code));
+        chip.addEventListener('click', async () => {
+            await applyCoupon(chip.dataset.code);
+            closeCouponModal();
+        });
     });
 
     // --- Payment method picker ---
@@ -575,8 +702,12 @@
                     if (!vRes.ok) throw new Error(vData.message || 'Payment verification failed');
                     window.location.href = `/orders/${data.orderId}/success`;
                 } catch (err) {
-                    alert(err.message);
-                    window.location.href = '/orders';
+                    showNotice({
+                        title: 'Payment needs attention',
+                        message: err.message,
+                        actionLabel: 'View my orders',
+                        onAction: () => { window.location.href = '/orders'; }
+                    });
                 }
             },
             modal: {
@@ -610,7 +741,22 @@
     // --- Place order ---
     placeOrderBtn.addEventListener('click', async () => {
         const selected = document.querySelector('input[name="selectedAddress"]:checked');
-        if (!selected) return alert('Please select or add a delivery address first.');
+        if (!selected) {
+            const hasAddresses = document.querySelectorAll('input[name="selectedAddress"]').length > 0;
+            return showNotice(hasAddresses
+                ? {
+                    title: 'Choose a delivery address',
+                    message: 'Select where this order should be delivered.',
+                    actionLabel: 'Show addresses',
+                    onAction: () => addressList.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                }
+                : {
+                    title: 'Add a delivery address',
+                    message: 'You have no saved address yet. Add one so we know where to deliver your order.',
+                    actionLabel: 'Add address',
+                    onAction: () => openAddressModal()
+                });
+        }
 
         const method = selectedPaymentMethod();
         placeOrderBtn.disabled = true;
@@ -619,7 +765,7 @@
         try {
             if (method === 'razorpay') {
                 await payOnline(selected.value);
-                return; 
+                return;
             }
 
             const placeUrl = method === 'wallet' ? '/wallet/checkout' : '/checkout/place-order';
@@ -633,7 +779,7 @@
             if (!res.ok) throw new Error(result.message || 'Could not place order');
             window.location.href = `/orders/${result.orderId}/success`;
         } catch (err) {
-            alert(err.message || 'Network error — please try again');
+            showNotice({ title: 'Could not place order', message: err.message || 'Network error. Please try again.' });
             placeOrderBtn.disabled = false;
             refreshPaymentUi();
         }
